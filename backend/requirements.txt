@@ -8,3 +8,4 @@ mlflow
 dvc
 python-dotenv
 pydantic
+plotly
