@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pandas
+numpy
+scikit-learn
+prophet
+mlflow
+dvc
+python-dotenv
+pydantic
