@@ -1,0 +1,16 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+venv/
+.env
+
+# Node
+node_modules/
+.next/
+
+# Data (Sensitive)
+data/raw/Final*
+mlruns/

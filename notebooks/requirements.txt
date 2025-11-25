@@ -2,5 +2,6 @@ pandas
 numpy
 matplotlib
 seaborn
-ipykernel
-statsmodels
+prophet
+scikit-learn
+jupyter
