@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./mlruns:/mlruns
+      - ./data:/app/data
+    depends_on:
+      - mlflow
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: mlflow/Dockerfile
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./mlruns:/mlruns
