@@ -13,8 +13,8 @@ COPY backend/requirements.txt .
 # Install python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy mlruns for direct model loading
-COPY mlruns /mlruns
+# mlruns directory will be mounted as a volume
+# COPY mlruns /mlruns
 
 # Copy application code
 COPY backend/ backend/
