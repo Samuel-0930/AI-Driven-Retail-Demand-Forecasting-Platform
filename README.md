@@ -1,16 +1,18 @@
 # DemandSense: AI 기반 수요 예측 대시보드
 
-**DemandSense**는 시계열 데이터를 분석하여 미래 수요를 예측하고, 그 결과를 시각적으로 탐색할 수 있는 풀스택 웹 애플리케이션입니다. 머신러닝 모델의 학습부터 서빙, 시각화까지 전 과정을 포함하여 MLOps의 기본 파이프라인을 경험할 수 있도록 설계되었습니다.
+**DemandSense**는 시계열 데이터를 분석하여 미래 수요를 예측하고, 그 결과를 시각적으로 탐색할 수 있는 풀스택 웹 애플리케이션입니다. 머신러닝 모델의 학습부터 서빙, 시각화, 그리고 CI/CD 및 모니터링까지 MLOps의 전 과정을 경험할 수 있도록 설계되었습니다.
 
 ---
 
 ## ✨ 주요 기능 (Key Features)
 
-- **AI 기반 수요 예측**: `scikit-learn`과 `Prophet`을 활용한 시계열 예측 모델
-- **인터랙티브 대시보드**: `Next.js`와 `Recharts`로 구현된 사용자 친화적 UI
-- **실험 관리 및 모델 서빙**: `MLflow`를 이용한 모델 실험 추적 및 버전 관리
-- **RESTful API**: `FastAPI`로 구축된 빠르고 효율적인 백엔드 API
+- **AI 기반 수요 예측**: `scikit-learn`과 `Prophet`을 활용한 정교한 시계열 예측 모델
+- **인터랙티브 대시보드**: `Next.js`와 `Recharts`로 구현된 사용자 친화적 데이터 시각화
+- **실험 관리 및 모델 서빙**: `MLflow`를 이용한 모델 실험 추적, 버전 관리 및 API 서빙
+- **RESTful API**: `FastAPI`로 구축된 고성능 백엔드 API
 - **컨테이너 기반 환경**: `Docker`와 `Docker Compose`를 통한 간편한 설치 및 실행
+- **자동화된 배포 파이프라인**: GitHub Actions를 통한 CI/CD 구축
+- **실시간 모니터링**: Prometheus와 Grafana를 이용한 시스템 상태 및 성능 모니터링
 
 ---
 
@@ -36,9 +38,9 @@
                          +---------------------+
 ```
 
-1.  **Frontend (Next.js)**: 사용자가 데이터를 업로드하고 예측 결과를 확인할 수 있는 UI를 제공합니다.
-2.  **Backend (FastAPI)**: 예측 요청을 받아 ML 모델을 호출하고 결과를 프론트엔드에 반환하는 API 서버입니다.
-3.  **MLflow**: 모델 학습 과정(실험)을 기록하고, 최적의 모델을 저장 및 관리하는 서버입니다.
+1.  **Frontend (Next.js)**: 사용자가 데이터를 업로드하고 예측 결과를 확인할 수 있는 웹 인터페이스입니다.
+2.  **Backend (FastAPI)**: 예측 요청을 처리하고 ML 모델을 호출하여 결과를 반환하는 API 서버입니다.
+3.  **MLflow**: 모델 학습 실험을 기록하고, 최적의 모델을 저장 및 관리하는 레지스트리입니다.
 
 ---
 
@@ -49,7 +51,8 @@
 | **Frontend**    | `React`, `Next.js`, `TypeScript`, `Tailwind CSS`, `Recharts`      |
 | **Backend**     | `Python`, `FastAPI`, `Uvicorn`                                    |
 | **ML/Data**     | `scikit-learn`, `Prophet`, `Pandas`, `NumPy`                      |
-| **MLOps**       | `MLflow`, `Docker`, `Docker Compose`                              |
+| **MLOps**       | `MLflow`, `Docker`, `Docker Compose`, `GitHub Actions`            |
+| **Monitoring**  | `Prometheus`, `Grafana`                                           |
 | **Notebook**    | `Jupyter Notebook`                                                |
 
 ---
@@ -72,8 +75,8 @@
     cd demand-sense
     ```
 
-2.  **Docker Compose를 이용한 전체 서비스 실행**
-    모든 서비스(Frontend, Backend, MLflow)를 한 번에 실행합니다.
+2.  **전체 서비스 실행**
+    Docker Compose를 사용하여 Frontend, Backend, MLflow, Monitoring 도구들을 한 번에 실행합니다.
     ```bash
     docker-compose up --build
     ```
@@ -82,6 +85,8 @@
     - **Frontend (대시보드)**: [http://localhost:3000](http://localhost:3000)
     - **Backend (API Docs)**: [http://localhost:8000/docs](http://localhost:8000/docs)
     - **MLflow (실험 관리)**: [http://localhost:5001](http://localhost:5001)
+    - **Prometheus (메트릭)**: [http://localhost:9091](http://localhost:9091)
+    - **Grafana (시각화)**: [http://localhost:3001](http://localhost:3001) (ID/PW: `admin`/`admin`)
 
 ---
 
@@ -91,15 +96,14 @@
 .
 ├── backend/         # FastAPI 백엔드 서버
 │   ├── app/         # API 라우트, 서비스 로직
-│   ├── data_generator.py # 샘플 데이터 생성
+│   ├── tests/       # API 유닛 테스트
 │   └── train_*.py   # 모델 학습 스크립트
 ├── frontend/        # Next.js 프론트엔드
-│   ├── app/         # 페이지 라우팅
-│   └── components/  # 리액트 컴포넌트 (대시보드 등)
 ├── mlflow/          # MLflow 서버 설정
+├── monitoring/      # 모니터링 설정 (Prometheus, Grafana)
 ├── notebooks/       # 데이터 분석 및 모델링 (EDA)
 ├── data/            # 원본 및 가공 데이터
-└── docker-compose.yml # 서비스 오케스트레이션
+└── docker-compose.yml # 서비스 오케스트레이션 설정
 ```
 
 ---
@@ -107,51 +111,44 @@
 ## 📈 ML 파이프라인 (ML Pipeline)
 
 1.  **데이터 준비**: `notebooks/comprehensive_eda.ipynb`에서 데이터를 탐색하고 전처리를 수행합니다.
-2.  **모델 학습 및 실험**: `backend/train_baseline.py` 또는 `train_all.py` 스크립트를 실행하여 모델을 학습합니다.
+2.  **모델 학습**: `backend/train_baseline.py` 스크립트를 실행하여 모델을 학습합니다.
     ```bash
-    # 백엔드 컨테이너 접속
-    docker-compose exec backend bash
-
-    # 모델 학습 스크립트 실행
-    python train_baseline.py
+    docker-compose exec backend python train_baseline.py
     ```
-3.  **실험 결과 확인**: [MLflow UI](http://localhost:5001)에 접속하여 파라미터, 메트릭 등 학습 결과를 확인하고 최적의 모델을 선정합니다.
-4.  **모델 서빙**: FastAPI 백엔드는 MLflow에 저장된 모델을 로드하여 예측 API를 제공합니다.
+3.  **실험 확인**: [MLflow UI](http://localhost:5001)에서 학습 결과와 메트릭을 확인합니다.
+4.  **서빙**: 학습된 모델은 FastAPI를 통해 즉시 API로 제공됩니다.
 
 ---
 
-## 🛠️ CI/CD & Monitoring
+## � CI/CD 및 모니터링 (CI/CD & Monitoring)
 
-This project includes a robust CI/CD pipeline and monitoring stack.
+이 프로젝트는 안정적인 운영을 위해 CI/CD 파이프라인과 모니터링 시스템을 갖추고 있습니다.
 
-### CI/CD Pipeline (GitHub Actions)
-- **Automated Testing**: Runs `pytest` on every push to `main` and `develop`.
-- **Docker Deployment**: Automatically builds and pushes images to Docker Hub on pushes to `main`.
+### CI/CD 파이프라인 (GitHub Actions)
+- **자동화된 테스트**: `main` 또는 `develop` 브랜치에 푸시될 때마다 `pytest`를 실행하여 코드 무결성을 검증합니다.
+- **Docker 이미지 배포**: `main` 브랜치에 푸시되면 자동으로 Docker 이미지를 빌드하여 Docker Hub에 배포합니다.
 
-### Monitoring Stack
-Real-time observability is provided by:
-- **Prometheus** (`http://localhost:9091`): Collects metrics from the backend API.
-- **Grafana** (`http://localhost:3001`): Visualizes metrics with a custom dashboard.
-    - **Default Login**: `admin` / `admin`
-    - **Dashboard**: Import `monitoring/grafana/fastapi_dashboard.json` for API insights.
+### 모니터링 스택
+- **Prometheus**: 백엔드 API의 성능 지표(요청 수, 응답 시간 등)를 수집합니다.
+- **Grafana**: 수집된 데이터를 시각화합니다. `monitoring/grafana/fastapi_dashboard.json`이 자동으로 로드되어 즉시 대시보드를 확인할 수 있습니다.
 
-### Testing
-Run backend tests locally using Docker:
+### 테스트 실행
+로컬에서 테스트를 실행하려면 다음 명령어를 사용하세요:
 ```bash
 docker-compose exec backend pytest backend/tests/
 ```
 
 ---
 
-## 🚀 Deployment
+## 🚀 배포 (Deployment)
 
-For easy deployment using pre-built images, see [DEPLOYMENT.md](DEPLOYMENT.md).
+Docker Hub에 배포된 이미지를 사용하여 소스 코드 없이도 어디서든 서비스를 실행할 수 있습니다. 자세한 내용은 [DEPLOYMENT.md](DEPLOYMENT.md)를 참고하세요.
 
 ---
 
 ## 🔮 향후 개선 사항 (Future Improvements)
 
-- [x]  **CI/CD 파이프라인 구축**: GitHub Actions를 이용해 테스트 및 배포 자동화
+- [x]  **CI/CD 파이프라인 구축**: GitHub Actions를 이용한 테스트 및 배포 자동화
 - [x]  **모델 모니터링**: Prometheus & Grafana를 이용한 시스템 모니터링
 - [ ]  **클라우드 배포**: AWS, GCP 등 클라우드 환경에 서비스 배포
 - [ ]  **고급 모델 추가**: LSTM, GRU 등 딥러닝 기반 시계열 모델 적용
