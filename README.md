@@ -120,10 +120,39 @@
 
 ---
 
+## 🛠️ CI/CD & Monitoring
+
+This project includes a robust CI/CD pipeline and monitoring stack.
+
+### CI/CD Pipeline (GitHub Actions)
+- **Automated Testing**: Runs `pytest` on every push to `main` and `develop`.
+- **Docker Deployment**: Automatically builds and pushes images to Docker Hub on pushes to `main`.
+
+### Monitoring Stack
+Real-time observability is provided by:
+- **Prometheus** (`http://localhost:9091`): Collects metrics from the backend API.
+- **Grafana** (`http://localhost:3001`): Visualizes metrics with a custom dashboard.
+    - **Default Login**: `admin` / `admin`
+    - **Dashboard**: Import `monitoring/grafana/fastapi_dashboard.json` for API insights.
+
+### Testing
+Run backend tests locally using Docker:
+```bash
+docker-compose exec backend pytest backend/tests/
+```
+
+---
+
+## 🚀 Deployment
+
+For easy deployment using pre-built images, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+---
+
 ## 🔮 향후 개선 사항 (Future Improvements)
 
-- [ ]  **CI/CD 파이프라인 구축**: GitHub Actions를 이용해 테스트 및 배포 자동화
-- [ ]  **모델 모니터링**: 예측 성능의 변화를 지속적으로 추적하고, 필요시 재학습 수행
+- [x]  **CI/CD 파이프라인 구축**: GitHub Actions를 이용해 테스트 및 배포 자동화
+- [x]  **모델 모니터링**: Prometheus & Grafana를 이용한 시스템 모니터링
 - [ ]  **클라우드 배포**: AWS, GCP 등 클라우드 환경에 서비스 배포
 - [ ]  **고급 모델 추가**: LSTM, GRU 등 딥러닝 기반 시계열 모델 적용
 

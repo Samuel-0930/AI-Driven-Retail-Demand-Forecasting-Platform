@@ -9,3 +9,6 @@ dvc
 python-dotenv
 pydantic
 plotly
+prometheus-fastapi-instrumentator
+httpx
+pytest

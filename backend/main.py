@@ -1,11 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(
-    title="Demand Sense API",
+    title="Demand Forecasting API",
     description="API for Retail Demand Forecasting",
     version="0.1.0"
 )
+
+# Instrumentator setup
+Instrumentator().instrument(app).expose(app)
 
 # CORS Setup
 origins = [
