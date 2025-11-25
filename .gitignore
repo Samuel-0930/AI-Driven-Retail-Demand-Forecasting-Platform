@@ -2,7 +2,6 @@ venv/
 __pycache__/
 .DS_Store
 .env
-data/
 node_modules/
 .next/
 mlruns/
