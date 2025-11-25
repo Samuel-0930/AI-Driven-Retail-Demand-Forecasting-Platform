@@ -1,15 +1,5 @@
 # DemandSense: AI 기반 수요 예측 대시보드
 
-![Project Banner](https://via.placeholder.com/1200x300.png?text=DemandSense+Project)
-
-<div align="center">
-
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/your-username/demand-sense)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tech Stack](https://img.shields.io/badge/tech-Next.js%20%7C%20FastAPI%20%7C%20MLflow-blueviolet)](https://github.com/your-username/demand-sense)
-
-</div>
-
 **DemandSense**는 시계열 데이터를 분석하여 미래 수요를 예측하고, 그 결과를 시각적으로 탐색할 수 있는 풀스택 웹 애플리케이션입니다. 머신러닝 모델의 학습부터 서빙, 시각화까지 전 과정을 포함하여 MLOps의 기본 파이프라인을 경험할 수 있도록 설계되었습니다.
 
 ---
