@@ -26,5 +26,19 @@ services:
     volumes:
       - mlruns_data:/mlruns
 
+  prometheus:
+    image: samuelsuperson/demand-sense-prometheus:latest
+    ports:
+      - "9091:9090"
+
+  grafana:
+    image: samuelsuperson/demand-sense-grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
 volumes:
   mlruns_data:

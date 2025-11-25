@@ -64,3 +64,19 @@ jobs:
         file: ./mlflow/Dockerfile
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/demand-sense-mlflow:latest
+
+    - name: Build and push Prometheus
+      uses: docker/build-push-action@v4
+      with:
+        context: ./monitoring/prometheus
+        file: ./monitoring/prometheus/Dockerfile
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/demand-sense-prometheus:latest
+
+    - name: Build and push Grafana
+      uses: docker/build-push-action@v4
+      with:
+        context: ./monitoring/grafana
+        file: ./monitoring/grafana/Dockerfile
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/demand-sense-grafana:latest
