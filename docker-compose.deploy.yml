@@ -1,0 +1,30 @@
+services:
+  backend:
+    image: samuelsuperson/demand-sense-backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - mlruns_data:/mlruns
+    depends_on:
+      - mlflow
+
+  frontend:
+    image: samuelsuperson/demand-sense-frontend:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+  mlflow:
+    image: samuelsuperson/demand-sense-mlflow:latest
+    ports:
+      - "5001:5000"
+    volumes:
+      - mlruns_data:/mlruns
+
+volumes:
+  mlruns_data:
