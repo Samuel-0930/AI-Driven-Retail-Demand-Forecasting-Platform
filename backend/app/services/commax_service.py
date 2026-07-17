@@ -59,6 +59,28 @@ class CommaxForecastService:
         model.fit(train)
         return model.predict(model.make_future_dataframe(periods=horizon_months)).tail(horizon_months)["yhat"].to_numpy()
 
+    def _historical_absolute_errors(self, item: pd.DataFrame, horizon_months: int, champion: str) -> list[float]:
+        """Build an item-level error distribution without looking at the final holdout."""
+        errors: list[float] = []
+        first_origin = len(item) - (4 * horizon_months)
+        for origin in range(first_origin, len(item) - horizon_months, horizon_months):
+            train = item.iloc[:origin]
+            test = item.iloc[origin:origin + horizon_months]
+            if len(train) <= SEASONAL_PERIOD or len(test) != horizon_months:
+                continue
+            predictions = self._predict(train, horizon_months, champion, test["period"])
+            errors.extend(abs(float(actual) - max(0, float(prediction))) for actual, prediction in zip(test["value"], predictions))
+        return errors
+
+    @staticmethod
+    def _risk_level(forecast_total: float, upper_total: float) -> tuple[str, str]:
+        uplift = (upper_total - forecast_total) / forecast_total if forecast_total > 0 else 0.0
+        if uplift >= 1:
+            return "high", "변동 폭이 커 보수적인 재고 검토가 필요합니다."
+        if uplift >= 0.5:
+            return "medium", "수요 변동을 고려해 상한 기준 재고를 함께 검토하세요."
+        return "low", "예측 대비 변동 폭이 비교적 안정적입니다."
+
     def forecast(self, item_code: str, horizon_months: int) -> dict:
         df = self._data()
         item = df[df["품목코드"] == item_code].sort_values("period").reset_index(drop=True)
@@ -86,11 +108,39 @@ class CommaxForecastService:
         champion, pattern_result = self._champion_for_pattern(pattern)
         train, actual = item.iloc[:-horizon_months], item.iloc[-horizon_months:]
         predictions = self._predict(train, horizon_months, champion, actual["period"])
+        historical_errors = self._historical_absolute_errors(item, horizon_months, champion)
+        error_margin = float(pd.Series(historical_errors).quantile(0.8)) if historical_errors else 0.0
         rows = []
         for (_, row), prediction in zip(actual.iterrows(), predictions):
             predicted = max(0, round(float(prediction), 0))
             actual_value = float(row["value"])
-            rows.append({"date": row["period"].date().isoformat(), "actual": actual_value, "forecast": predicted, "absolute_error": abs(actual_value - predicted)})
+            lower_bound = max(0, round(predicted - error_margin, 0))
+            upper_bound = round(predicted + error_margin, 0)
+            rows.append({
+                "date": row["period"].date().isoformat(),
+                "actual": actual_value,
+                "forecast": predicted,
+                "lower_bound": lower_bound,
+                "upper_bound": upper_bound,
+                "absolute_error": abs(actual_value - predicted),
+            })
         total_actual = sum(row["actual"] for row in rows)
         wape = sum(row["absolute_error"] for row in rows) / total_actual * 100 if total_actual else 0.0
-        return {"item_code": item_code, "pattern": pattern, "champion": champion, "benchmark_wape": pattern_result["models"][champion]["wape"], "holdout_wape": round(wape, 2), "points": rows}
+        coverage = sum(row["lower_bound"] <= row["actual"] <= row["upper_bound"] for row in rows) / len(rows) * 100 if rows else 0.0
+        forecast_total = sum(row["forecast"] for row in rows)
+        upper_total = sum(row["upper_bound"] for row in rows)
+        risk_level, risk_message = self._risk_level(forecast_total, upper_total)
+        return {
+            "item_code": item_code,
+            "pattern": pattern,
+            "champion": champion,
+            "benchmark_wape": pattern_result["models"][champion]["wape"],
+            "holdout_wape": round(wape, 2),
+            "interval_level": 80,
+            "interval_coverage": round(coverage, 1),
+            "demand_variability_risk": risk_level,
+            "risk_message": risk_message,
+            "planning_upper_total": upper_total,
+            "forecast_total": forecast_total,
+            "points": rows,
+        }

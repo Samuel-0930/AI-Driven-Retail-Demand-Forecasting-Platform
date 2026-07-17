@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -32,6 +33,12 @@ const patternLabels: Record<string, string> = {
   Erratic: "변동형",
   Intermittent: "간헐형",
   Smooth: "안정형",
+};
+
+const riskLabels = {
+  low: "낮음",
+  medium: "보통",
+  high: "높음",
 };
 
 const formatNumber = (value: number) =>
@@ -278,7 +285,7 @@ export default function Dashboard() {
               <p className="text-sm font-semibold text-teal-700">02 · 품목별 검증</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight">실제 출하량 vs 당시 예측</h2>
               <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                가장 최근 6개월을 숨긴 뒤, 그 시점에 알 수 있었던 데이터만으로 생성한 예측과 실제 출하량을 비교합니다.
+                가장 최근 6개월을 숨긴 뒤, 그 시점에 알 수 있었던 데이터만으로 생성한 예측과 실제 출하량을 비교합니다. 예측 범위는 그 이전 검증 오차만으로 계산했습니다.
               </p>
             </div>
             <div className="flex w-full gap-2 sm:w-auto">
@@ -323,9 +330,28 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              <div className="grid divide-y divide-slate-200 border-b border-slate-200 bg-slate-50 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                <div className="px-5 py-4 sm:px-7">
+                  <p className="text-xs text-slate-500">{backtest.interval_level}% 예측 구간 적중률</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{backtest.interval_coverage.toFixed(1)}%</p>
+                </div>
+                <div className="px-5 py-4 sm:px-7">
+                  <p className="text-xs text-slate-500">수요 변동 리스크</p>
+                  <p className="mt-1 text-lg font-semibold text-teal-700">{riskLabels[backtest.demand_variability_risk]}</p>
+                </div>
+                <div className="px-5 py-4 sm:px-7">
+                  <p className="text-xs text-slate-500">보수적 6개월 수요 기준</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{formatNumber(backtest.planning_upper_total)}</p>
+                </div>
+              </div>
+
+              <div className="border-b border-slate-200 px-5 py-4 text-sm leading-6 text-slate-600 sm:px-7">
+                <span className="font-semibold text-slate-800">해석:</span> {backtest.risk_message} 현재 재고와 리드타임 정보가 없으므로 품절 가능성을 단정하지 않으며, 위 기준은 재고 검토를 위한 수요 상한 참고값입니다.
+              </div>
+
               <div className="h-[360px] px-2 py-7 sm:px-5">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={backtest.points} margin={{ top: 8, right: 18, left: 4, bottom: 0 }}>
+                  <ComposedChart data={backtest.points} margin={{ top: 8, right: 18, left: 4, bottom: 0 }}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} width={55} />
@@ -334,9 +360,11 @@ export default function Dashboard() {
                       formatter={(value) => formatNumber(Number(value))}
                     />
                     <Legend wrapperStyle={{ fontSize: 12, paddingTop: 16 }} />
+                    <Area type="monotone" dataKey="lower_bound" name="예측 구간 하한" stroke="none" fill="transparent" stackId="interval" legendType="none" />
+                    <Area type="monotone" dataKey={(point) => point.upper_bound - point.lower_bound} name="80% 예측 구간" stroke="none" fill="#99f6e4" fillOpacity={0.55} stackId="interval" />
                     <Line type="monotone" dataKey="actual" name="실제 출하량" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                     <Line type="monotone" dataKey="forecast" name="당시 예측" stroke="#475569" strokeWidth={2} strokeDasharray="6 5" dot={{ r: 3 }} />
-                  </LineChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
 
@@ -347,6 +375,7 @@ export default function Dashboard() {
                       <th className="px-5 py-3 font-medium sm:px-7">월</th>
                       <th className="px-5 py-3 text-right font-medium">실제</th>
                       <th className="px-5 py-3 text-right font-medium">예측</th>
+                      <th className="px-5 py-3 text-right font-medium">80% 구간</th>
                       <th className="px-5 py-3 text-right font-medium sm:px-7">절대 오차</th>
                     </tr>
                   </thead>
@@ -356,6 +385,7 @@ export default function Dashboard() {
                         <td className="px-5 py-3 font-medium sm:px-7">{point.date}</td>
                         <td className="px-5 py-3 text-right tabular-nums">{formatNumber(point.actual)}</td>
                         <td className="px-5 py-3 text-right tabular-nums">{formatNumber(point.forecast)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums text-slate-500">{formatNumber(point.lower_bound)}–{formatNumber(point.upper_bound)}</td>
                         <td className="px-5 py-3 text-right tabular-nums text-slate-500 sm:px-7">{formatNumber(point.absolute_error)}</td>
                       </tr>
                     ))}
