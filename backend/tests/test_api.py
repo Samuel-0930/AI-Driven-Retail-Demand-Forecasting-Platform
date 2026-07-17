@@ -25,6 +25,18 @@ def test_public_commax_dashboard_data_is_available():
     assert items.status_code == 200
     assert len(items.json()) == 20
 
+
+def test_commax_backtest_includes_interval_and_risk_context():
+    response = client.get("/api/v1/commax/backtest?item_code=SDC000036AXX&horizon_months=6")
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["interval_level"] == 80
+    assert result["demand_variability_risk"] in {"low", "medium", "high"}
+    assert 0 <= result["interval_coverage"] <= 100
+    assert result["planning_upper_total"] >= result["forecast_total"]
+    assert all(point["lower_bound"] <= point["forecast"] <= point["upper_bound"] for point in result["points"])
+
 def test_predict_rejects_invalid_forecast_window():
     response = client.post("/api/v1/predict", json={
         "store_id": 1,
