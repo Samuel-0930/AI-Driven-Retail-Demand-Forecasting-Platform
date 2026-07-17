@@ -75,7 +75,13 @@ export interface CommaxForecastResponse {
 }
 export interface CommaxBacktestResponse {
     item_code: string; pattern: string; champion: string; benchmark_wape: number; holdout_wape: number;
-    points: Array<{ date: string; actual: number; forecast: number; absolute_error: number }>;
+    interval_level: number;
+    interval_coverage: number;
+    demand_variability_risk: "low" | "medium" | "high";
+    risk_message: string;
+    planning_upper_total: number;
+    forecast_total: number;
+    points: Array<{ date: string; actual: number; forecast: number; lower_bound: number; upper_bound: number; absolute_error: number }>;
 }
 
 export class ApiError extends Error {
