@@ -8,11 +8,11 @@
 
 - **AI 기반 수요 예측**: `scikit-learn`과 `Prophet`을 활용한 정교한 시계열 예측 모델
 - **인터랙티브 대시보드**: `Next.js`와 `Recharts`로 구현된 사용자 친화적 데이터 시각화
-- **실험 관리 및 모델 서빙**: `MLflow`를 이용한 모델 실험 추적, 버전 관리 및 API 서빙
+- **실험 관리 및 모델 서빙**: `MLflow`를 이용한 모델 실험 추적과 API 서빙
 - **RESTful API**: `FastAPI`로 구축된 고성능 백엔드 API
 - **컨테이너 기반 환경**: `Docker`와 `Docker Compose`를 통한 간편한 설치 및 실행
-- **자동화된 배포 파이프라인**: GitHub Actions를 통한 CI/CD 구축
-- **실시간 모니터링**: Prometheus와 Grafana를 이용한 시스템 상태 및 성능 모니터링
+- **자동화된 이미지 빌드 파이프라인**: GitHub Actions를 통한 테스트와 Docker 이미지 발행
+- **API 모니터링**: Prometheus와 Grafana를 이용한 HTTP 상태 및 성능 모니터링
 
 ---
 
@@ -38,7 +38,7 @@
                          +---------------------+
 ```
 
-1.  **Frontend (Next.js)**: 사용자가 데이터를 업로드하고 예측 결과를 확인할 수 있는 웹 인터페이스입니다.
+1.  **Frontend (Next.js)**: 사용자가 매장·상품·기간·프로모션 조건을 선택하고 예측 결과를 확인하는 웹 인터페이스입니다.
 2.  **Backend (FastAPI)**: 예측 요청을 처리하고 ML 모델을 호출하여 결과를 반환하는 API 서버입니다.
 3.  **MLflow**: 모델 학습 실험을 기록하고, 최적의 모델을 저장 및 관리하는 레지스트리입니다.
 
@@ -59,6 +59,8 @@
 
 ## 🚀 시작하기 (Getting Started)
 
+로컬 개발용 명령과 환경 변수는 [DEVELOPMENT.md](DEVELOPMENT.md)를 참고하세요. 포트폴리오 보완 계획은 [PORTFOLIO_ROADMAP.md](PORTFOLIO_ROADMAP.md)에 정리되어 있습니다.
+
 이 프로젝트를 로컬 환경에서 실행하려면 아래 단계를 따르세요.
 
 ### 사전 요구사항
@@ -71,14 +73,14 @@
 
 1.  **프로젝트 클론**
     ```bash
-    git clone https://github.com/your-username/demand-sense.git
-    cd demand-sense
+    git clone https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform.git
+    cd AI-Driven-Retail-Demand-Forecasting-Platform
     ```
 
 2.  **전체 서비스 실행**
     Docker Compose를 사용하여 Frontend, Backend, MLflow, Monitoring 도구들을 한 번에 실행합니다.
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
 
 3.  **애플리케이션 접속**
@@ -86,7 +88,7 @@
     - **Backend (API Docs)**: [http://localhost:8000/docs](http://localhost:8000/docs)
     - **MLflow (실험 관리)**: [http://localhost:5001](http://localhost:5001)
     - **Prometheus (메트릭)**: [http://localhost:9091](http://localhost:9091)
-    - **Grafana (시각화)**: [http://localhost:3001](http://localhost:3001) (ID/PW: `admin`/`admin`)
+    - **Grafana (시각화)**: [http://localhost:3001](http://localhost:3001) (기본 ID: `admin`, 비밀번호는 `GRAFANA_ADMIN_PASSWORD`)
 
 ---
 
@@ -110,10 +112,10 @@
 
 ## 📈 ML 파이프라인 (ML Pipeline)
 
-1.  **데이터 준비**: `notebooks/comprehensive_eda.ipynb`에서 데이터를 탐색하고 전처리를 수행합니다.
+1.  **데이터 준비**: `notebooks/EDA/final_eda.ipynb`에서 데이터를 탐색하고 전처리를 수행합니다.
 2.  **모델 학습**: `backend/train_baseline.py` 스크립트를 실행하여 모델을 학습합니다.
     ```bash
-    docker-compose exec backend python train_baseline.py
+    docker compose exec backend python backend/train_baseline.py
     ```
 3.  **실험 확인**: [MLflow UI](http://localhost:5001)에서 학습 결과와 메트릭을 확인합니다.
 4.  **서빙**: 학습된 모델은 FastAPI를 통해 즉시 API로 제공됩니다.
@@ -125,17 +127,17 @@
 이 프로젝트는 안정적인 운영을 위해 CI/CD 파이프라인과 모니터링 시스템을 갖추고 있습니다.
 
 ### CI/CD 파이프라인 (GitHub Actions)
-- **자동화된 테스트**: `main` 또는 `develop` 브랜치에 푸시될 때마다 `pytest`를 실행하여 코드 무결성을 검증합니다.
-- **Docker 이미지 배포**: `main` 브랜치에 푸시되면 자동으로 Docker 이미지를 빌드하여 Docker Hub에 배포합니다.
+- **자동화된 검증**: `main` 또는 `develop` 브랜치에 푸시될 때마다 backend test, frontend lint/build, Compose 구성을 검증합니다.
+- **Docker 이미지 발행**: `main` 브랜치에 푸시되면 검증을 통과한 Docker 이미지를 Docker Hub에 발행합니다.
 
 ### 모니터링 스택
-- **Prometheus**: 백엔드 API의 성능 지표(요청 수, 응답 시간 등)를 수집합니다.
+- **Prometheus**: 백엔드 API의 성능 지표(요청 수, 응답 시간 등)를 수집합니다. 예측 정확도·drift 모니터링은 아직 구현 대상입니다.
 - **Grafana**: 수집된 데이터를 시각화합니다. `monitoring/grafana/fastapi_dashboard.json`이 자동으로 로드되어 즉시 대시보드를 확인할 수 있습니다.
 
 ### 테스트 실행
 로컬에서 테스트를 실행하려면 다음 명령어를 사용하세요:
 ```bash
-docker-compose exec backend pytest backend/tests/
+docker compose exec backend pytest backend/tests/
 ```
 
 ---

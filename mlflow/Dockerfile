@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-RUN pip install mlflow==2.14.1
+RUN pip install mlflow==2.22.4
 
 EXPOSE 5000
 

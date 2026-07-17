@@ -3,13 +3,14 @@
 .gitignore
 
 # Python
-__pycache__
+**/__pycache__
 venv/
 .env
+.env.*
 
 # Node
-node_modules/
-.next/
+**/node_modules
+**/.next
 
 # Data (Sensitive)
 data/raw/Final*

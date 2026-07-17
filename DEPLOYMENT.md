@@ -9,50 +9,27 @@
 
 ## 🏃‍♂️ 실행 방법
 
-소스 코드를 다운로드할 필요 없이, 아래 `docker-compose.deploy.yml` 파일만 있으면 됩니다.
+소스 코드는 필요 없지만 저장소의 최신 `docker-compose.deploy.yml` 파일은 필요합니다.
 
-1.  **파일 생성**: `docker-compose.yml`이라는 이름으로 파일을 만들고 아래 내용을 붙여넣으세요. (또는 저장소의 `docker-compose.deploy.yml`을 사용하세요)
-
-    ```yaml
-    services:
-      backend:
-        image: samuelsuperson/demand-sense-backend:latest
-        ports:
-          - "8000:8000"
-        environment:
-          - MLFLOW_TRACKING_URI=http://mlflow:5000
-        volumes:
-          - mlruns_data:/mlruns
-        depends_on:
-          - mlflow
-
-      frontend:
-        image: samuelsuperson/demand-sense-frontend:latest
-        ports:
-          - "3000:3000"
-        environment:
-          - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-        depends_on:
-          - backend
-
-      mlflow:
-        image: samuelsuperson/demand-sense-mlflow:latest
-        ports:
-          - "5001:5000"
-        volumes:
-          - mlruns_data:/mlruns
-
-    volumes:
-      mlruns_data:
-    ```
-
-2.  **실행**: 터미널에서 해당 파일이 있는 경로로 이동하여 아래 명령어를 실행합니다.
+1.  **Compose 파일 다운로드**:
 
     ```bash
-    docker-compose up -d
+    curl -O https://raw.githubusercontent.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform/develop/docker-compose.deploy.yml
     ```
 
-3.  **접속**:
+2.  **Grafana 관리자 비밀번호 설정**: 기본 비밀번호를 사용하지 않도록 환경변수를 먼저 설정합니다.
+
+    ```bash
+    export GRAFANA_ADMIN_PASSWORD='충분히-긴-비밀번호'
+    ```
+
+3.  **실행**: 터미널에서 해당 파일이 있는 경로로 이동하여 아래 명령어를 실행합니다.
+
+    ```bash
+    docker compose -f docker-compose.deploy.yml up -d
+    ```
+
+4.  **접속**:
     *   **Frontend (대시보드)**: [http://localhost:3000](http://localhost:3000)
     *   **Backend (API)**: [http://localhost:8000/docs](http://localhost:8000/docs)
     *   **MLflow**: [http://localhost:5001](http://localhost:5001)
@@ -60,5 +37,5 @@
 ## 🛑 종료 방법
 
 ```bash
-docker-compose down
+docker compose -f docker-compose.deploy.yml down
 ```

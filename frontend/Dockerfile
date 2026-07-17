@@ -9,6 +9,8 @@ RUN npm ci
 # Stage 2: Build the application
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG BACKEND_URL=http://backend:8000
+ENV BACKEND_URL=$BACKEND_URL
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules

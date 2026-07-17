@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+const API_BASE_URL = '/api/v1';
 
 export interface PredictionRequest {
     store_id: number;
@@ -23,10 +23,27 @@ export interface PredictionResponse {
     predictions: PredictionPoint[];
 }
 
+export class ApiError extends Error {
+    constructor(
+        message: string,
+        public readonly status?: number,
+    ) {
+        super(message);
+    }
+}
+
 export const api = {
     predict: async (data: PredictionRequest): Promise<PredictionResponse> => {
-        const response = await axios.post<PredictionResponse>(`${API_BASE_URL}/predict`, data);
-        return response.data;
+        try {
+            const response = await axios.post<PredictionResponse>(`${API_BASE_URL}/predict`, data, { timeout: 10_000 });
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const detail = error.response?.data?.detail;
+                throw new ApiError(typeof detail === 'string' ? detail : 'Prediction request failed', error.response?.status);
+            }
+            throw error;
+        }
     },
 
     checkHealth: async (): Promise<{ status: string }> => {
