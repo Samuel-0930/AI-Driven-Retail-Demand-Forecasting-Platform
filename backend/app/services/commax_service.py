@@ -81,6 +81,14 @@ class CommaxForecastService:
             return "medium", "수요 변동을 고려해 상한 기준 재고를 함께 검토하세요."
         return "low", "예측 대비 변동 폭이 비교적 안정적입니다."
 
+    @staticmethod
+    def _inventory_risk(available_inventory: float, forecast_demand: float, planning_demand: float) -> tuple[str, str]:
+        if available_inventory < forecast_demand:
+            return "high", "가용 재고가 기준 예측 수요보다 부족합니다. 발주 검토가 필요합니다."
+        if available_inventory < planning_demand:
+            return "medium", "기준 예측은 충족하지만, 선택한 서비스 수준의 안전 재고에는 못 미칩니다."
+        return "low", "선택한 서비스 수준의 계획 수요를 충족하는 재고입니다."
+
     def forecast(self, item_code: str, horizon_months: int) -> dict:
         df = self._data()
         item = df[df["품목코드"] == item_code].sort_values("period").reset_index(drop=True)
@@ -143,4 +151,53 @@ class CommaxForecastService:
             "planning_upper_total": upper_total,
             "forecast_total": forecast_total,
             "points": rows,
+        }
+
+    def inventory_plan(
+        self,
+        item_code: str,
+        on_hand_inventory: float,
+        incoming_inventory: float,
+        lead_time_months: int,
+        service_level: float,
+    ) -> dict:
+        df = self._data()
+        item = df[df["품목코드"] == item_code].sort_values("period").reset_index(drop=True)
+        if item.empty:
+            raise CommaxItemNotFoundError
+
+        pattern = item["Pattern"].iloc[0]
+        champion, _ = self._champion_for_pattern(pattern)
+        future_dates = pd.date_range(
+            item["period"].iloc[-1] + pd.offsets.MonthBegin(1),
+            periods=lead_time_months,
+            freq="MS",
+        )
+        predictions = [max(0, float(value)) for value in self._predict(item, lead_time_months, champion, pd.Series(future_dates))]
+        historical_errors = self._historical_absolute_errors(item, lead_time_months, champion)
+        safety_stock_per_month = float(pd.Series(historical_errors).quantile(service_level)) if historical_errors else 0.0
+        forecast_demand = sum(predictions)
+        safety_stock = safety_stock_per_month * lead_time_months
+        planning_demand = forecast_demand + safety_stock
+        available_inventory = on_hand_inventory + incoming_inventory
+        recommended_order = max(0.0, planning_demand - available_inventory)
+        risk_level, risk_message = self._inventory_risk(available_inventory, forecast_demand, planning_demand)
+
+        return {
+            "item_code": item_code,
+            "item_name": item["품목명"].iloc[0],
+            "pattern": pattern,
+            "champion": champion,
+            "lead_time_months": lead_time_months,
+            "service_level": round(service_level * 100),
+            "on_hand_inventory": on_hand_inventory,
+            "incoming_inventory": incoming_inventory,
+            "available_inventory": round(available_inventory, 0),
+            "forecast_demand": round(forecast_demand, 0),
+            "safety_stock": round(safety_stock, 0),
+            "planning_demand": round(planning_demand, 0),
+            "recommended_order": round(recommended_order, 0),
+            "inventory_risk": risk_level,
+            "risk_message": risk_message,
+            "assumption": "현재고와 입고 예정 재고가 리드타임 내 사용 가능하며, 과거 예측 오차가 향후 수요 변동을 대표한다고 가정합니다.",
         }
