@@ -37,6 +37,20 @@ def test_commax_backtest_includes_interval_and_risk_context():
     assert result["planning_upper_total"] >= result["forecast_total"]
     assert all(point["lower_bound"] <= point["forecast"] <= point["upper_bound"] for point in result["points"])
 
+
+def test_commax_inventory_plan_recommends_order_from_user_inputs():
+    response = client.get(
+        "/api/v1/commax/inventory-plan?item_code=SDC000036AXX&on_hand_inventory=1000&incoming_inventory=500&lead_time_months=2&service_level=0.9"
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["service_level"] == 90
+    assert result["available_inventory"] == 1500
+    assert result["planning_demand"] >= result["forecast_demand"]
+    assert result["recommended_order"] == result["planning_demand"] - result["available_inventory"]
+    assert result["inventory_risk"] in {"low", "medium", "high"}
+
 def test_predict_rejects_invalid_forecast_window():
     response = client.post("/api/v1/predict", json={
         "store_id": 1,

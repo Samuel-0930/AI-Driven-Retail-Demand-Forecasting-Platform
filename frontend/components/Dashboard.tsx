@@ -15,6 +15,7 @@ import {
 import {
   CommaxBacktestResponse,
   CommaxEvaluationResponse,
+  CommaxInventoryPlanResponse,
   CommaxItem,
   api,
 } from "../lib/api";
@@ -49,6 +50,13 @@ export default function Dashboard() {
   const [items, setItems] = useState<CommaxItem[]>([]);
   const [itemCode, setItemCode] = useState(DEFAULT_ITEM);
   const [backtest, setBacktest] = useState<CommaxBacktestResponse | null>(null);
+  const [inventoryPlan, setInventoryPlan] = useState<CommaxInventoryPlanResponse | null>(null);
+  const [onHandInventory, setOnHandInventory] = useState(0);
+  const [incomingInventory, setIncomingInventory] = useState(0);
+  const [leadTimeMonths, setLeadTimeMonths] = useState(1);
+  const [serviceLevel, setServiceLevel] = useState(0.8);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryError, setInventoryError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -102,6 +110,18 @@ export default function Dashboard() {
       setError("선택한 품목의 검증 결과를 불러오지 못했습니다.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInventoryPlan = async () => {
+    setInventoryLoading(true);
+    setInventoryError("");
+    try {
+      setInventoryPlan(await api.getCommaxInventoryPlan(itemCode, onHandInventory, incomingInventory, leadTimeMonths, serviceLevel));
+    } catch {
+      setInventoryError("재고 시뮬레이션 결과를 불러오지 못했습니다.");
+    } finally {
+      setInventoryLoading(false);
     }
   };
 
@@ -293,7 +313,10 @@ export default function Dashboard() {
               <select
                 id="item-code"
                 value={itemCode}
-                onChange={(event) => setItemCode(event.target.value)}
+                onChange={(event) => {
+                  setItemCode(event.target.value);
+                  setInventoryPlan(null);
+                }}
                 className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 sm:w-72"
               >
                 {groupedItems.map((group) => (
@@ -316,8 +339,9 @@ export default function Dashboard() {
           </div>
 
           {backtest && (
-            <div className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-7">
+            <>
+              <div className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-7">
                 <div>
                   <p className="font-semibold">{selectedItem?.item_name ?? backtest.item_code}</p>
                   <p className="mt-1 text-sm text-slate-500">
@@ -328,9 +352,9 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-500">Holdout WAPE</p>
                   <p className="mt-1 text-2xl font-semibold text-teal-700">{backtest.holdout_wape.toFixed(2)}%</p>
                 </div>
-              </div>
+                </div>
 
-              <div className="grid divide-y divide-slate-200 border-b border-slate-200 bg-slate-50 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                <div className="grid divide-y divide-slate-200 border-b border-slate-200 bg-slate-50 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 <div className="px-5 py-4 sm:px-7">
                   <p className="text-xs text-slate-500">{backtest.interval_level}% 예측 구간 적중률</p>
                   <p className="mt-1 text-lg font-semibold tabular-nums">{backtest.interval_coverage.toFixed(1)}%</p>
@@ -343,13 +367,13 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-500">보수적 6개월 수요 기준</p>
                   <p className="mt-1 text-lg font-semibold tabular-nums">{formatNumber(backtest.planning_upper_total)}</p>
                 </div>
-              </div>
+                </div>
 
-              <div className="border-b border-slate-200 px-5 py-4 text-sm leading-6 text-slate-600 sm:px-7">
+                <div className="border-b border-slate-200 px-5 py-4 text-sm leading-6 text-slate-600 sm:px-7">
                 <span className="font-semibold text-slate-800">해석:</span> {backtest.risk_message} 현재 재고와 리드타임 정보가 없으므로 품절 가능성을 단정하지 않으며, 위 기준은 재고 검토를 위한 수요 상한 참고값입니다.
-              </div>
+                </div>
 
-              <div className="h-[360px] px-2 py-7 sm:px-5">
+                <div className="h-[360px] px-2 py-7 sm:px-5">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={backtest.points} margin={{ top: 8, right: 18, left: 4, bottom: 0 }}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
@@ -366,9 +390,9 @@ export default function Dashboard() {
                     <Line type="monotone" dataKey="forecast" name="당시 예측" stroke="#475569" strokeWidth={2} strokeDasharray="6 5" dot={{ r: 3 }} />
                   </ComposedChart>
                 </ResponsiveContainer>
-              </div>
+                </div>
 
-              <div className="overflow-x-auto border-t border-slate-200">
+                <div className="overflow-x-auto border-t border-slate-200">
                 <table className="w-full min-w-[620px] text-left text-sm">
                   <thead className="bg-slate-50 text-slate-500">
                     <tr>
@@ -391,8 +415,70 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
-            </div>
+
+              <section className="mt-10 rounded-xl border border-slate-200 bg-white p-5 sm:p-7">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-teal-700">03 · 재고 시뮬레이션</p>
+                    <h3 className="mt-2 text-2xl font-semibold tracking-tight">입력값 기반 권장 발주량</h3>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">현재고와 입고 예정 재고를 입력하면, 리드타임 동안의 예측 수요와 선택한 서비스 수준을 기준으로 발주 참고값을 계산합니다.</p>
+                  </div>
+                </div>
+
+                <form
+                  className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void loadInventoryPlan();
+                  }}
+                >
+                  <label className="text-sm text-slate-600">
+                    현재 가용 재고
+                    <input type="number" min="0" value={onHandInventory} onChange={(event) => setOnHandInventory(Number(event.target.value))} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15" />
+                  </label>
+                  <label className="text-sm text-slate-600">
+                    입고 예정 수량
+                    <input type="number" min="0" value={incomingInventory} onChange={(event) => setIncomingInventory(Number(event.target.value))} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15" />
+                  </label>
+                  <label className="text-sm text-slate-600">
+                    리드타임
+                    <select value={leadTimeMonths} onChange={(event) => setLeadTimeMonths(Number(event.target.value))} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15">
+                      {[1, 2, 3, 4, 5, 6].map((months) => <option key={months} value={months}>{months}개월</option>)}
+                    </select>
+                  </label>
+                  <label className="text-sm text-slate-600">
+                    목표 서비스 수준
+                    <select value={serviceLevel} onChange={(event) => setServiceLevel(Number(event.target.value))} className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15">
+                      <option value={0.8}>80%</option>
+                      <option value={0.9}>90%</option>
+                      <option value={0.95}>95%</option>
+                    </select>
+                  </label>
+                  <button type="submit" disabled={inventoryLoading} className="self-end rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">
+                    {inventoryLoading ? "계산 중" : "발주량 계산"}
+                  </button>
+                </form>
+
+                {inventoryError && <p role="alert" className="mt-4 text-sm text-red-700">{inventoryError}</p>}
+
+                {inventoryPlan && (
+                  <div className="mt-7 border-t border-slate-200 pt-6">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div><p className="text-xs text-slate-500">리드타임 예측 수요</p><p className="mt-1 text-xl font-semibold tabular-nums">{formatNumber(inventoryPlan.forecast_demand)}</p></div>
+                      <div><p className="text-xs text-slate-500">안전 재고 ({inventoryPlan.service_level}%)</p><p className="mt-1 text-xl font-semibold tabular-nums">{formatNumber(inventoryPlan.safety_stock)}</p></div>
+                      <div><p className="text-xs text-slate-500">가용 재고</p><p className="mt-1 text-xl font-semibold tabular-nums">{formatNumber(inventoryPlan.available_inventory)}</p></div>
+                      <div><p className="text-xs text-slate-500">권장 발주량</p><p className="mt-1 text-xl font-semibold tabular-nums text-teal-700">{formatNumber(inventoryPlan.recommended_order)}</p></div>
+                    </div>
+                    <div className="mt-6 border-l-2 border-teal-700 pl-4 text-sm leading-6 text-slate-600">
+                      <span className="font-semibold text-slate-800">재고 커버리지 리스크 · {riskLabels[inventoryPlan.inventory_risk]}</span> — {inventoryPlan.risk_message}<br />
+                      <span className="text-slate-500">계획 수요 {formatNumber(inventoryPlan.planning_demand)} · {inventoryPlan.assumption}</span>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </>
           )}
         </section>
 

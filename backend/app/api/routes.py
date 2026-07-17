@@ -69,3 +69,25 @@ def get_commax_backtest(item_code: str, horizon_months: int = Query(default=6, g
         raise HTTPException(status_code=404, detail="Commax item was not found.")
     except CommaxDataNotFoundError:
         raise HTTPException(status_code=404, detail="Commax source data or benchmark is not available locally.")
+
+
+@router.get("/commax/inventory-plan")
+def get_commax_inventory_plan(
+    item_code: str,
+    on_hand_inventory: float = Query(default=0, ge=0),
+    incoming_inventory: float = Query(default=0, ge=0),
+    lead_time_months: int = Query(default=1, ge=1, le=6),
+    service_level: float = Query(default=0.8, ge=0.5, le=0.99),
+):
+    try:
+        return commax_service.inventory_plan(
+            item_code,
+            on_hand_inventory,
+            incoming_inventory,
+            lead_time_months,
+            service_level,
+        )
+    except CommaxItemNotFoundError:
+        raise HTTPException(status_code=404, detail="Commax item was not found.")
+    except CommaxDataNotFoundError:
+        raise HTTPException(status_code=404, detail="Commax source data or benchmark is not available locally.")
