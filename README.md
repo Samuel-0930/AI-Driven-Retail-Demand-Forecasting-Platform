@@ -54,7 +54,11 @@
 
 ![Demand Signal 대시보드 — 수요 패턴별 champion 모델과 검증 결과](docs/images/demand-signal-dashboard.jpg)
 
-대시보드: `http://127.0.0.1:3000`
+공개 데모: [demand-signal-sepia.vercel.app](https://demand-signal-sepia.vercel.app)
+
+공개 API 상태: [demand-signal-api.onrender.com/health](https://demand-signal-api.onrender.com/health)
+
+로컬 대시보드: `http://127.0.0.1:3000`
 
 API 문서: `http://127.0.0.1:8000/docs`
 
