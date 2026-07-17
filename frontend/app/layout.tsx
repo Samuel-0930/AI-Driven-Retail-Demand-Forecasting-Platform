@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DemandSense | Demand Forecasting Portfolio",
-  description: "Reproducible demand forecasting demo with rolling backtest validation.",
+  title: "DemandSense | Retail Demand Forecasting",
+  description: "COMMAX 출하 데이터의 수요 패턴을 분류하고 시계열 교차 검증으로 모델을 비교한 데이터 분석 포트폴리오입니다.",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
