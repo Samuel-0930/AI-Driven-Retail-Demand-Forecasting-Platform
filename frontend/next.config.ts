@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+    const backendUrl = process.env.VERCEL
+      ? "https://demand-signal-api.onrender.com"
+      : (process.env.BACKEND_URL ?? "http://127.0.0.1:8000");
 
     return [
       {
