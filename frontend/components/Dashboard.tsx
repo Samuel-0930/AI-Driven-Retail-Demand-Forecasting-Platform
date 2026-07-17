@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -45,10 +45,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
       setLoading(true);
       setError("");
       try {
@@ -57,22 +54,19 @@ export default function Dashboard() {
           api.getCommaxItems(),
           api.getCommaxBacktest(DEFAULT_ITEM, 6),
         ]);
-        if (!active) return;
         setEvaluation(evaluationResult);
         setItems(itemResult);
         setBacktest(backtestResult);
       } catch {
-        if (active) setError("분석 결과를 불러오지 못했습니다. API 서버 상태를 확인해 주세요.");
+        setError("분석 결과를 불러오지 못했습니다. 무료 데모 서버가 시작되는 중일 수 있으니 잠시 후 다시 시도해 주세요.");
       } finally {
-        if (active) setLoading(false);
+        setLoading(false);
       }
-    };
-
-    void loadDashboard();
-    return () => {
-      active = false;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const selectedItem = items.find((item) => item.item_code === itemCode);
   const groupedItems = useMemo(
@@ -158,8 +152,16 @@ export default function Dashboard() {
         </section>
 
         {error && (
-          <div role="alert" className="mt-10 border-l-2 border-red-600 bg-white px-4 py-3 text-sm text-red-700">
-            {error}
+          <div role="alert" className="mt-10 flex flex-wrap items-center justify-between gap-4 border-l-2 border-red-600 bg-white px-4 py-3 text-sm text-red-700">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => void loadDashboard()}
+              disabled={loading}
+              className="font-semibold text-teal-700 underline underline-offset-4 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              다시 시도
+            </button>
           </div>
         )}
 
@@ -170,6 +172,9 @@ export default function Dashboard() {
               <h2 className="mt-3 text-3xl font-semibold tracking-tight">패턴별 champion 모델</h2>
               <p className="mt-4 leading-7 text-slate-600">
                 전체 평균만 비교하지 않고 수요 패턴별 WAPE가 가장 낮은 모델을 선택했습니다. 변동형에는 계절 Croston, 나머지 패턴에는 Croston/SBA가 우세했습니다.
+              </p>
+              <p className="mt-4 border-l-2 border-slate-300 pl-4 text-sm leading-6 text-slate-500">
+                <span className="font-semibold text-slate-700">WAPE란?</span> 전체 실제 출하량 대비 절대 예측 오차의 비율입니다. <span className="font-semibold text-teal-700">낮을수록 실제값에 가까운 예측</span>입니다.
               </p>
               <div className="mt-8 border-l-2 border-teal-700 pl-5">
                 <p className="text-sm text-slate-500">분석 결론</p>
@@ -214,27 +219,34 @@ export default function Dashboard() {
           <div className="mt-14 grid gap-10 border-t border-slate-200 pt-10 lg:grid-cols-2">
             <div>
               <h3 className="font-semibold">전체 모델 비교</h3>
-              <div className="mt-5 space-y-4">
-                {modelResults.map(([model, metrics], index) => (
-                  <div key={model} className="grid grid-cols-[1fr_auto] items-center gap-4 text-sm">
-                    <div>
-                      <div className="mb-2 flex justify-between gap-4">
-                        <span className={index === 0 ? "font-semibold text-slate-900" : "text-slate-600"}>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                MAE는 평균 절대 오차(출하량 단위), MASE는 naive 기준으로 스케일링한 오차입니다. 세 지표 모두 낮을수록 좋습니다.
+              </p>
+              <div className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">모델</th>
+                      <th className="px-4 py-3 text-right font-medium">WAPE</th>
+                      <th className="px-4 py-3 text-right font-medium">MAE</th>
+                      <th className="px-4 py-3 text-right font-medium">MASE</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {modelResults.map(([model, metrics], index) => (
+                      <tr key={model} className={index === 0 ? "bg-teal-50/50" : ""}>
+                        <td className={index === 0 ? "px-4 py-3 font-semibold text-slate-900" : "px-4 py-3 text-slate-600"}>
                           {modelLabels[model] ?? model}
-                        </span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                        <div
-                          className={index === 0 ? "h-full rounded-full bg-teal-700" : "h-full rounded-full bg-slate-400"}
-                          style={{ width: `${Math.min(metrics.wape, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className={index === 0 ? "font-semibold text-teal-700" : "tabular-nums text-slate-500"}>
-                      {metrics.wape.toFixed(2)}%
-                    </span>
-                  </div>
-                ))}
+                        </td>
+                        <td className={index === 0 ? "px-4 py-3 text-right font-semibold text-teal-700" : "px-4 py-3 text-right tabular-nums text-slate-600"}>
+                          {metrics.wape.toFixed(2)}%
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{formatNumber(metrics.mae)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{metrics.mase.toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             <div>
