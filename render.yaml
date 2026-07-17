@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: demand-signal-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ENABLE_API_DOCS
+        value: "false"

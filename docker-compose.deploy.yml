@@ -2,7 +2,7 @@ services:
   backend:
     image: samuelsuperson/demand-sense-backend:latest
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     volumes:
@@ -14,29 +14,27 @@ services:
     image: samuelsuperson/demand-sense-frontend:latest
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     depends_on:
       - backend
 
   mlflow:
     image: samuelsuperson/demand-sense-mlflow:latest
     ports:
-      - "5001:5000"
+      - "127.0.0.1:5001:5000"
     volumes:
       - mlruns_data:/mlruns
 
   prometheus:
     image: samuelsuperson/demand-sense-prometheus:latest
     ports:
-      - "9091:9090"
+      - "127.0.0.1:9091:9090"
 
   grafana:
     image: samuelsuperson/demand-sense-grafana:latest
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD}
     depends_on:
       - prometheus
 

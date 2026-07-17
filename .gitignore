@@ -2,6 +2,13 @@ venv/
 __pycache__/
 .DS_Store
 .env
+.env.*
+!.env.example
 node_modules/
 .next/
 mlruns/
+data/raw/Final*
+data/processed/evaluation_*.json
+data/processed/commax_evaluation.json
+.playwright-cli/
+output/playwright/

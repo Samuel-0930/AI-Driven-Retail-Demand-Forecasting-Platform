@@ -1,0 +1,134 @@
+{
+  "dataset_type": "commax_monthly_shipments",
+  "scope": "Top 20 items by cumulative shipments",
+  "period": "2015-01-01 to 2025-08-01",
+  "evaluation_method": "Three rolling 6-month origins. Prophet has no external variables; seasonal-naive repeats prior-year month; Croston/SBA and TSB tune parameters using training history only.",
+  "items": 20,
+  "horizon_months": 6,
+  "folds": 3,
+  "models": {
+    "seasonal_naive": {
+      "mae": 727.95,
+      "wape": 58.35,
+      "mase": 0.785
+    },
+    "croston_sba": {
+      "mae": 530.56,
+      "wape": 42.53,
+      "mase": 0.572
+    },
+    "seasonal_croston_sba": {
+      "mae": 573.43,
+      "wape": 45.96,
+      "mase": 0.618
+    },
+    "tsb": {
+      "mae": 551.76,
+      "wape": 44.23,
+      "mase": 0.595
+    },
+    "prophet": {
+      "mae": 886.18,
+      "wape": 71.03,
+      "mase": 0.956
+    }
+  },
+  "pattern_results": [
+    {
+      "pattern": "Erratic",
+      "items": 6,
+      "models": {
+        "seasonal_naive": {
+          "mae": 481.85,
+          "wape": 96.15,
+          "mase": 0.555
+        },
+        "croston_sba": {
+          "mae": 375.82,
+          "wape": 74.99,
+          "mase": 0.433
+        },
+        "seasonal_croston_sba": {
+          "mae": 356.12,
+          "wape": 71.06,
+          "mase": 0.41
+        },
+        "tsb": {
+          "mae": 387.95,
+          "wape": 77.41,
+          "mase": 0.447
+        },
+        "prophet": {
+          "mae": 996.3,
+          "wape": 198.81,
+          "mase": 1.147
+        }
+      },
+      "champion": "seasonal_croston_sba"
+    },
+    {
+      "pattern": "Intermittent",
+      "items": 9,
+      "models": {
+        "seasonal_naive": {
+          "mae": 943.39,
+          "wape": 51.71,
+          "mase": 0.903
+        },
+        "croston_sba": {
+          "mae": 711.68,
+          "wape": 39.01,
+          "mase": 0.681
+        },
+        "seasonal_croston_sba": {
+          "mae": 801.83,
+          "wape": 43.95,
+          "mase": 0.768
+        },
+        "tsb": {
+          "mae": 739.7,
+          "wape": 40.54,
+          "mase": 0.708
+        },
+        "prophet": {
+          "mae": 1061.56,
+          "wape": 58.18,
+          "mase": 1.016
+        }
+      },
+      "champion": "croston_sba"
+    },
+    {
+      "pattern": "Smooth",
+      "items": 5,
+      "models": {
+        "seasonal_naive": {
+          "mae": 635.48,
+          "wape": 57.51,
+          "mase": 0.805
+        },
+        "croston_sba": {
+          "mae": 390.24,
+          "wape": 35.32,
+          "mase": 0.494
+        },
+        "seasonal_croston_sba": {
+          "mae": 423.05,
+          "wape": 38.29,
+          "mase": 0.536
+        },
+        "tsb": {
+          "mae": 410.07,
+          "wape": 37.11,
+          "mase": 0.519
+        },
+        "prophet": {
+          "mae": 438.36,
+          "wape": 39.67,
+          "mase": 0.555
+        }
+      },
+      "champion": "croston_sba"
+    }
+  ]
+}

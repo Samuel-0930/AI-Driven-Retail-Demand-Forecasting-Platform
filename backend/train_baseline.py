@@ -6,6 +6,10 @@ import mlflow.prophet
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import os
 import argparse
+from pathlib import Path
+
+HOLDOUT_DAYS = 30
+
 
 def train_baseline(data_path, store_id, product_id):
     """
@@ -18,23 +22,46 @@ def train_baseline(data_path, store_id, product_id):
     
     # Filter for specific store/product
     mask = (df['store_id'] == store_id) & (df['product_id'] == product_id)
-    item_df = df[mask].copy()
+    item_df = df[mask].copy().sort_values("date")
     
     if item_df.empty:
-        print(f"No data found for Store {store_id}, Product {product_id}")
-        return
+        raise ValueError(f"No data found for Store {store_id}, Product {product_id}")
+
+    if len(item_df) <= HOLDOUT_DAYS:
+        raise ValueError(
+            f"Store {store_id}, Product {product_id} needs more than {HOLDOUT_DAYS} rows to train"
+        )
 
     # Prophet requires columns 'ds' and 'y'
     item_df = item_df.rename(columns={'date': 'ds', 'sales': 'y'})
     
     # Split Train/Test (Last 30 days for testing)
-    train_df = item_df.iloc[:-30]
-    test_df = item_df.iloc[-30:]
+    train_df = item_df.iloc[:-HOLDOUT_DAYS]
+    test_df = item_df.iloc[-HOLDOUT_DAYS:]
     
     # 2. Setup MLflow
     mlflow.set_experiment("Demand_Sense_Baseline")
     
     with mlflow.start_run(run_name=f"Store_{store_id}_Product_{product_id}"):
+        mlflow.log_params(
+            {
+                "store_id": store_id,
+                "product_id": product_id,
+                "model_type": "Prophet",
+                "training_rows": len(train_df),
+                "validation_rows": len(test_df),
+                "dataset_type": "synthetic_demo",
+                "dataset_path": str(Path(data_path)),
+                "evaluation_promo_schedule": "observed_holdout",
+            }
+        )
+        mlflow.set_tags(
+            {
+                "portfolio.scope": "reproducible_demo",
+                "model.limitations": "Synthetic data; observed holdout promotion schedule is used for evaluation.",
+            }
+        )
+
         # 3. Train Model
         # Adding regressors (optional, but good for demo)
         model = Prophet(yearly_seasonality=True, weekly_seasonality=True)
@@ -44,7 +71,7 @@ def train_baseline(data_path, store_id, product_id):
         model.fit(train_df)
         
         # 4. Evaluate
-        future = model.make_future_dataframe(periods=30)
+        future = model.make_future_dataframe(periods=HOLDOUT_DAYS)
         # Add regressor values for future (assuming we know promo schedule)
         # For simplicity, we use the actual promo values from test set
         future['is_promo'] = pd.concat([train_df['is_promo'], test_df['is_promo']]).values
@@ -52,7 +79,7 @@ def train_baseline(data_path, store_id, product_id):
         forecast = model.predict(future)
         
         # Calculate Metrics on Test Set
-        predictions = forecast.iloc[-30:]['yhat'].values
+        predictions = forecast.iloc[-HOLDOUT_DAYS:]['yhat'].values
         actuals = test_df['y'].values
         
         mae = mean_absolute_error(actuals, predictions)
@@ -61,8 +88,6 @@ def train_baseline(data_path, store_id, product_id):
         print(f"Store {store_id}, Product {product_id} - MAE: {mae:.2f}, RMSE: {rmse:.2f}")
         
         # 5. Log to MLflow
-        mlflow.log_param("store_id", store_id)
-        mlflow.log_param("product_id", product_id)
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("rmse", rmse)
         

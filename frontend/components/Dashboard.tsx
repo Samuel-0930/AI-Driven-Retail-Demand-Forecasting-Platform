@@ -1,249 +1,378 @@
 "use client";
 
-import React, { useState } from 'react';
-import { api, PredictionResponse } from '../lib/api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, ComposedChart } from 'recharts';
-import { Calendar, ShoppingBag, Store, TrendingUp, Activity } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  CommaxBacktestResponse,
+  CommaxEvaluationResponse,
+  CommaxItem,
+  api,
+} from "../lib/api";
+
+const DEFAULT_ITEM = "SDC000036AXX";
+
+const modelLabels: Record<string, string> = {
+  croston_sba: "Croston/SBA",
+  seasonal_croston_sba: "Seasonal Croston/SBA",
+  seasonal_naive: "Seasonal naive",
+  prophet: "Prophet",
+  tsb: "TSB",
+};
+
+const patternLabels: Record<string, string> = {
+  Erratic: "변동형",
+  Intermittent: "간헐형",
+  Smooth: "안정형",
+};
+
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 1 }).format(value);
 
 export default function Dashboard() {
-    const [storeId, setStoreId] = useState(1);
-    const [productId, setProductId] = useState(1);
-    const [startDate, setStartDate] = useState('2025-01-01');
-    const [endDate, setEndDate] = useState('2025-01-30');
-    const [isPromo, setIsPromo] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<PredictionResponse | null>(null);
-    const [error, setError] = useState('');
+  const [evaluation, setEvaluation] = useState<CommaxEvaluationResponse | null>(null);
+  const [items, setItems] = useState<CommaxItem[]>([]);
+  const [itemCode, setItemCode] = useState(DEFAULT_ITEM);
+  const [backtest, setBacktest] = useState<CommaxBacktestResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    const handlePredict = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        try {
-            const result = await api.predict({
-                store_id: storeId,
-                product_id: productId,
-                start_date: startDate,
-                end_date: endDate,
-                is_promo: isPromo,
-            });
-            setData(result);
-        } catch (err) {
-            setError('Failed to fetch predictions. Please check the backend connection.');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+  useEffect(() => {
+    let active = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const [evaluationResult, itemResult, backtestResult] = await Promise.all([
+          api.getCommaxEvaluation(),
+          api.getCommaxItems(),
+          api.getCommaxBacktest(DEFAULT_ITEM, 6),
+        ]);
+        if (!active) return;
+        setEvaluation(evaluationResult);
+        setItems(itemResult);
+        setBacktest(backtestResult);
+      } catch {
+        if (active) setError("분석 결과를 불러오지 못했습니다. API 서버 상태를 확인해 주세요.");
+      } finally {
+        if (active) setLoading(false);
+      }
     };
 
-    return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-            {/* Header */}
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-blue-600 p-2 rounded-lg">
-                            <TrendingUp className="h-6 w-6 text-white" />
-                        </div>
-                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                            Demand Sense
-                        </h1>
-                    </div>
-                    <div className="flex items-center space-x-4 text-sm text-slate-500">
-                        <span className="flex items-center"><Activity className="w-4 h-4 mr-1" /> v1.0.0</span>
-                    </div>
-                </div>
-            </header>
+    void loadDashboard();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+  const selectedItem = items.find((item) => item.item_code === itemCode);
+  const groupedItems = useMemo(
+    () =>
+      ["Erratic", "Intermittent", "Smooth"].map((pattern) => ({
+        pattern,
+        items: items.filter((item) => item.pattern === pattern),
+      })),
+    [items],
+  );
 
-                    {/* Sidebar / Controls */}
-                    <div className="lg:col-span-3 space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                            <h2 className="text-lg font-semibold mb-4 flex items-center">
-                                <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                                Configuration
-                            </h2>
-                            <form onSubmit={handlePredict} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Store ID</label>
-                                    <div className="relative">
-                                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="number"
-                                            value={storeId}
-                                            onChange={(e) => setStoreId(Number(e.target.value))}
-                                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
+  const modelResults = useMemo(
+    () =>
+      evaluation
+        ? Object.entries(evaluation.models).sort(([, left], [, right]) => left.wape - right.wape)
+        : [],
+    [evaluation],
+  );
 
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Product ID</label>
-                                    <div className="relative">
-                                        <ShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="number"
-                                            value={productId}
-                                            onChange={(e) => setProductId(Number(e.target.value))}
-                                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                </div>
+  const loadBacktest = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setBacktest(await api.getCommaxBacktest(itemCode, 6));
+    } catch {
+      setError("선택한 품목의 검증 결과를 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                                    <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                                    <input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    />
-                                </div>
-
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <input
-                                        type="checkbox"
-                                        id="promo"
-                                        checked={isPromo}
-                                        onChange={(e) => setIsPromo(e.target.checked)}
-                                        className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                                    />
-                                    <label htmlFor="promo" className="text-sm font-medium text-slate-700">Apply Promotion</label>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
-                                >
-                                    {loading ? (
-                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    ) : (
-                                        "Generate Forecast"
-                                    )}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    {/* Main Content / Chart */}
-                    <div className="lg:col-span-9 space-y-6">
-                        {error && (
-                            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
-                                <div className="flex">
-                                    <div className="flex-shrink-0">
-                                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-sm text-red-700">{error}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold text-slate-800">Demand Forecast</h2>
-                                {data && (
-                                    <div className="flex space-x-4 text-sm">
-                                        <div className="flex items-center">
-                                            <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
-                                            <span className="text-slate-600">Forecast</span>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <span className="w-3 h-3 rounded-full bg-blue-100 mr-2"></span>
-                                            <span className="text-slate-600">Confidence Interval</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {data ? (
-                                <div className="h-[400px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <ComposedChart data={data.predictions} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis
-                                                dataKey="date"
-                                                stroke="#64748b"
-                                                fontSize={12}
-                                                tickLine={false}
-                                                axisLine={false}
-                                                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                            />
-                                            <YAxis
-                                                stroke="#64748b"
-                                                fontSize={12}
-                                                tickLine={false}
-                                                axisLine={false}
-                                                tickFormatter={(value) => `${value}`}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                itemStyle={{ color: '#1e293b' }}
-                                                labelStyle={{ color: '#64748b', marginBottom: '0.5rem' }}
-                                                formatter={(value: number) => [value.toFixed(0), 'Sales']}
-                                                labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="upper_bound"
-                                                stroke="none"
-                                                fill="#3b82f6"
-                                                fillOpacity={0.1}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="lower_bound"
-                                                stroke="none"
-                                                fill="#3b82f6"
-                                                fillOpacity={0.1}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="forecast"
-                                                stroke="#3b82f6"
-                                                strokeWidth={3}
-                                                dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
-                                                activeDot={{ r: 6, strokeWidth: 0 }}
-                                            />
-                                        </ComposedChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            ) : (
-                                <div className="h-[400px] w-full flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
-                                    <Activity className="w-12 h-12 mb-4 opacity-50" />
-                                    <p className="text-lg font-medium">Ready to forecast</p>
-                                    <p className="text-sm">Configure parameters and click Generate</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </main>
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-950">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
+          <a href="#top" className="flex items-center gap-3 font-semibold tracking-tight">
+            <span className="h-2.5 w-2.5 rounded-full bg-teal-700" aria-hidden="true" />
+            Demand Signal
+          </a>
+          <nav className="flex items-center gap-5 text-sm text-slate-600" aria-label="프로젝트 링크">
+            <a className="transition hover:text-teal-700" href="#validation">검증 결과</a>
+            <a
+              className="transition hover:text-teal-700"
+              href="https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub ↗
+            </a>
+          </nav>
         </div>
-    );
+      </header>
+
+      <main id="top" className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-8 sm:pt-20">
+        <section className="max-w-4xl">
+          <p className="mb-5 text-sm font-semibold tracking-wide text-teal-700">
+            RETAIL DEMAND FORECASTING · DATA ANALYSIS PORTFOLIO
+          </p>
+          <h1 className="text-balance text-4xl font-semibold leading-tight tracking-[-0.035em] sm:text-6xl">
+            간헐 수요는 하나의 모델로<br className="hidden sm:block" /> 설명할 수 없습니다.
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+            COMMAX 실제 출하 데이터의 수요 패턴을 분류하고, 시계열 교차 검증으로 품목군마다 더 적합한 예측 모델을 선택했습니다.
+          </p>
+          <dl className="mt-10 grid max-w-3xl grid-cols-2 gap-x-8 gap-y-6 border-y border-slate-200 py-6 sm:grid-cols-4">
+            <div>
+              <dt className="text-sm text-slate-500">관측치</dt>
+              <dd className="mt-1 text-xl font-semibold">20,096</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">전체 품목</dt>
+              <dd className="mt-1 text-xl font-semibold">157</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">평가 품목</dt>
+              <dd className="mt-1 text-xl font-semibold">Top 20</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-slate-500">검증 설계</dt>
+              <dd className="mt-1 text-xl font-semibold">3 × 6개월</dd>
+            </div>
+          </dl>
+        </section>
+
+        {error && (
+          <div role="alert" className="mt-10 border-l-2 border-red-600 bg-white px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <section id="validation" className="scroll-mt-8 pt-20">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-sm font-semibold text-teal-700">01 · 핵심 결과</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">패턴별 champion 모델</h2>
+              <p className="mt-4 leading-7 text-slate-600">
+                전체 평균만 비교하지 않고 수요 패턴별 WAPE가 가장 낮은 모델을 선택했습니다. 변동형에는 계절 Croston, 나머지 패턴에는 Croston/SBA가 우세했습니다.
+              </p>
+              <div className="mt-8 border-l-2 border-teal-700 pl-5">
+                <p className="text-sm text-slate-500">분석 결론</p>
+                <p className="mt-2 text-lg font-medium leading-7">
+                  복잡한 Prophet보다 간헐 수요 특화 baseline이 더 정확했습니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
+                  <tr>
+                    <th className="px-5 py-4 font-medium">수요 패턴</th>
+                    <th className="px-5 py-4 font-medium">품목</th>
+                    <th className="px-5 py-4 font-medium">선택 모델</th>
+                    <th className="px-5 py-4 text-right font-medium">WAPE</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {evaluation?.pattern_results.map((result) => (
+                    <tr key={result.pattern}>
+                      <td className="px-5 py-4 font-medium">
+                        {patternLabels[result.pattern] ?? result.pattern}
+                        <span className="ml-2 text-xs font-normal text-slate-400">{result.pattern}</span>
+                      </td>
+                      <td className="px-5 py-4 text-slate-600">{result.items}</td>
+                      <td className="px-5 py-4 text-slate-700">{modelLabels[result.champion] ?? result.champion}</td>
+                      <td className="px-5 py-4 text-right font-semibold text-teal-700">
+                        {result.models[result.champion]?.wape.toFixed(2)}%
+                      </td>
+                    </tr>
+                  ))}
+                  {!evaluation && (
+                    <tr><td colSpan={4} className="px-5 py-10 text-center text-slate-400">{loading ? "결과를 불러오는 중입니다." : "결과가 없습니다."}</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-14 grid gap-10 border-t border-slate-200 pt-10 lg:grid-cols-2">
+            <div>
+              <h3 className="font-semibold">전체 모델 비교</h3>
+              <div className="mt-5 space-y-4">
+                {modelResults.map(([model, metrics], index) => (
+                  <div key={model} className="grid grid-cols-[1fr_auto] items-center gap-4 text-sm">
+                    <div>
+                      <div className="mb-2 flex justify-between gap-4">
+                        <span className={index === 0 ? "font-semibold text-slate-900" : "text-slate-600"}>
+                          {modelLabels[model] ?? model}
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className={index === 0 ? "h-full rounded-full bg-teal-700" : "h-full rounded-full bg-slate-400"}
+                          style={{ width: `${Math.min(metrics.wape, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className={index === 0 ? "font-semibold text-teal-700" : "tabular-nums text-slate-500"}>
+                      {metrics.wape.toFixed(2)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold">검증 방법</h3>
+              <dl className="mt-5 grid gap-5 text-sm sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                <div>
+                  <dt className="text-slate-500">시간 분할</dt>
+                  <dd className="mt-1 font-medium">Rolling origin 3회</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">예측 구간</dt>
+                  <dd className="mt-1 font-medium">회차별 6개월</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">선택 기준</dt>
+                  <dd className="mt-1 font-medium">패턴별 최저 WAPE</dd>
+                </div>
+              </dl>
+              <p className="mt-6 text-sm leading-6 text-slate-500">
+                평가 대상은 누적 출하량 상위 20개 품목입니다. 이 결과를 전체 157개 품목의 운영 성능으로 일반화하지 않았습니다.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="pt-24">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-sm font-semibold text-teal-700">02 · 품목별 검증</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">실제 출하량 vs 당시 예측</h2>
+              <p className="mt-3 max-w-2xl leading-7 text-slate-600">
+                가장 최근 6개월을 숨긴 뒤, 그 시점에 알 수 있었던 데이터만으로 생성한 예측과 실제 출하량을 비교합니다.
+              </p>
+            </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <label className="sr-only" htmlFor="item-code">품목 선택</label>
+              <select
+                id="item-code"
+                value={itemCode}
+                onChange={(event) => setItemCode(event.target.value)}
+                className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 sm:w-72"
+              >
+                {groupedItems.map((group) => (
+                  <optgroup key={group.pattern} label={`${patternLabels[group.pattern]} · ${group.pattern}`}>
+                    {group.items.map((item) => (
+                      <option key={item.item_code} value={item.item_code}>{item.item_name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => void loadBacktest()}
+                disabled={loading}
+                className="shrink-0 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "불러오는 중" : "비교 보기"}
+              </button>
+            </div>
+          </div>
+
+          {backtest && (
+            <div className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-7">
+                <div>
+                  <p className="font-semibold">{selectedItem?.item_name ?? backtest.item_code}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {patternLabels[backtest.pattern] ?? backtest.pattern} · {modelLabels[backtest.champion] ?? backtest.champion}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">Holdout WAPE</p>
+                  <p className="mt-1 text-2xl font-semibold text-teal-700">{backtest.holdout_wape.toFixed(2)}%</p>
+                </div>
+              </div>
+
+              <div className="h-[360px] px-2 py-7 sm:px-5">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={backtest.points} margin={{ top: 8, right: 18, left: 4, bottom: 0 }}>
+                    <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} width={55} />
+                    <Tooltip
+                      contentStyle={{ border: "1px solid #e2e8f0", borderRadius: 8, boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
+                      formatter={(value) => formatNumber(Number(value))}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12, paddingTop: 16 }} />
+                    <Line type="monotone" dataKey="actual" name="실제 출하량" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="forecast" name="당시 예측" stroke="#475569" strokeWidth={2} strokeDasharray="6 5" dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="overflow-x-auto border-t border-slate-200">
+                <table className="w-full min-w-[620px] text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-500">
+                    <tr>
+                      <th className="px-5 py-3 font-medium sm:px-7">월</th>
+                      <th className="px-5 py-3 text-right font-medium">실제</th>
+                      <th className="px-5 py-3 text-right font-medium">예측</th>
+                      <th className="px-5 py-3 text-right font-medium sm:px-7">절대 오차</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {backtest.points.map((point) => (
+                      <tr key={point.date}>
+                        <td className="px-5 py-3 font-medium sm:px-7">{point.date}</td>
+                        <td className="px-5 py-3 text-right tabular-nums">{formatNumber(point.actual)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums">{formatNumber(point.forecast)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums text-slate-500 sm:px-7">{formatNumber(point.absolute_error)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-24 border-t border-slate-200 pt-10">
+          <div className="grid gap-8 sm:grid-cols-[1fr_auto] sm:items-start">
+            <div>
+              <p className="font-semibold">프로젝트 범위</p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                FastAPI 예측 API, MLflow 실험 추적, Docker 개발 환경과 CI를 포함합니다. 합성 데이터 데모는 재현 가능한 파이프라인 검증용이며, 위 성능 수치는 COMMAX 실제 데이터 평가에서만 가져왔습니다.
+              </p>
+            </div>
+            <a
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold text-teal-700 hover:text-teal-800"
+            >
+              API 문서 보기 ↗
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
 }
