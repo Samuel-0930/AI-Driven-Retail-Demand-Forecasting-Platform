@@ -83,6 +83,24 @@ export interface CommaxBacktestResponse {
     forecast_total: number;
     points: Array<{ date: string; actual: number; forecast: number; lower_bound: number; upper_bound: number; absolute_error: number }>;
 }
+export interface CommaxInventoryPlanResponse {
+    item_code: string;
+    item_name: string;
+    pattern: string;
+    champion: string;
+    lead_time_months: number;
+    service_level: number;
+    on_hand_inventory: number;
+    incoming_inventory: number;
+    available_inventory: number;
+    forecast_demand: number;
+    safety_stock: number;
+    planning_demand: number;
+    recommended_order: number;
+    inventory_risk: "low" | "medium" | "high";
+    risk_message: string;
+    assumption: string;
+}
 
 export class ApiError extends Error {
     constructor(
@@ -131,6 +149,16 @@ export const api = {
     getCommaxItems: async (): Promise<CommaxItem[]> => (await axios.get(`${API_BASE_URL}/commax/items`, { timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
     getCommaxForecast: async (itemCode: string, horizonMonths: number): Promise<CommaxForecastResponse> => (await axios.get(`${API_BASE_URL}/commax/forecast`, { params: { item_code: itemCode, horizon_months: horizonMonths }, timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
     getCommaxBacktest: async (itemCode: string, horizonMonths: number): Promise<CommaxBacktestResponse> => (await axios.get(`${API_BASE_URL}/commax/backtest`, { params: { item_code: itemCode, horizon_months: horizonMonths }, timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
+    getCommaxInventoryPlan: async (itemCode: string, onHandInventory: number, incomingInventory: number, leadTimeMonths: number, serviceLevel: number): Promise<CommaxInventoryPlanResponse> => (await axios.get(`${API_BASE_URL}/commax/inventory-plan`, {
+        params: {
+            item_code: itemCode,
+            on_hand_inventory: onHandInventory,
+            incoming_inventory: incomingInventory,
+            lead_time_months: leadTimeMonths,
+            service_level: serviceLevel,
+        },
+        timeout: COMMAX_REQUEST_TIMEOUT_MS,
+    })).data,
 
     checkHealth: async (): Promise<{ status: string }> => {
         const response = await axios.get(`${API_BASE_URL.replace('/api/v1', '')}/health`);
