@@ -110,7 +110,7 @@ export default function Dashboard() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
           <a href="#top" className="flex items-center gap-3 font-semibold tracking-tight">
             <span className="h-2.5 w-2.5 rounded-full bg-teal-700" aria-hidden="true" />
-            DemandSense
+            Demand Signal
           </a>
           <nav className="flex items-center gap-5 text-sm text-slate-600" aria-label="프로젝트 링크">
             <a className="transition hover:text-teal-700" href="#validation">검증 결과</a>

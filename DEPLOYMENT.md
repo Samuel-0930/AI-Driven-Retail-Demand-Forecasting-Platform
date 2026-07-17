@@ -1,6 +1,6 @@
-# 🚀 DemandSense 배포 가이드
+# 🚀 Demand Signal 배포 가이드
 
-이 문서는 Docker Hub에 배포된 이미지를 사용하여 **DemandSense** 애플리케이션을 어디서든 쉽게 실행하는 방법을 안내합니다.
+이 문서는 Docker Hub에 배포된 이미지를 사용하여 **Demand Signal** 애플리케이션을 어디서든 쉽게 실행하는 방법을 안내합니다.
 
 ## 📋 사전 요구사항
 

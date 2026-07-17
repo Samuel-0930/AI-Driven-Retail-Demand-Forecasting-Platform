@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DemandSense | Retail Demand Forecasting",
+  title: "Demand Signal | Retail Demand Forecasting",
   description: "COMMAX 출하 데이터의 수요 패턴을 분류하고 시계열 교차 검증으로 모델을 비교한 데이터 분석 포트폴리오입니다.",
 };
 
