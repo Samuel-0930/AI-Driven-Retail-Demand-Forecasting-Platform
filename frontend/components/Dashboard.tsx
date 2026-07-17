@@ -219,27 +219,34 @@ export default function Dashboard() {
           <div className="mt-14 grid gap-10 border-t border-slate-200 pt-10 lg:grid-cols-2">
             <div>
               <h3 className="font-semibold">전체 모델 비교</h3>
-              <div className="mt-5 space-y-4">
-                {modelResults.map(([model, metrics], index) => (
-                  <div key={model} className="grid grid-cols-[1fr_auto] items-center gap-4 text-sm">
-                    <div>
-                      <div className="mb-2 flex justify-between gap-4">
-                        <span className={index === 0 ? "font-semibold text-slate-900" : "text-slate-600"}>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                MAE는 평균 절대 오차(출하량 단위), MASE는 naive 기준으로 스케일링한 오차입니다. 세 지표 모두 낮을수록 좋습니다.
+              </p>
+              <div className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">모델</th>
+                      <th className="px-4 py-3 text-right font-medium">WAPE</th>
+                      <th className="px-4 py-3 text-right font-medium">MAE</th>
+                      <th className="px-4 py-3 text-right font-medium">MASE</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {modelResults.map(([model, metrics], index) => (
+                      <tr key={model} className={index === 0 ? "bg-teal-50/50" : ""}>
+                        <td className={index === 0 ? "px-4 py-3 font-semibold text-slate-900" : "px-4 py-3 text-slate-600"}>
                           {modelLabels[model] ?? model}
-                        </span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                        <div
-                          className={index === 0 ? "h-full rounded-full bg-teal-700" : "h-full rounded-full bg-slate-400"}
-                          style={{ width: `${Math.min(metrics.wape, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className={index === 0 ? "font-semibold text-teal-700" : "tabular-nums text-slate-500"}>
-                      {metrics.wape.toFixed(2)}%
-                    </span>
-                  </div>
-                ))}
+                        </td>
+                        <td className={index === 0 ? "px-4 py-3 text-right font-semibold text-teal-700" : "px-4 py-3 text-right tabular-nums text-slate-600"}>
+                          {metrics.wape.toFixed(2)}%
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{formatNumber(metrics.mae)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{metrics.mase.toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             <div>
