@@ -24,6 +24,7 @@ export default function Dashboard() {
     const [commaxForecast, setCommaxForecast] = useState<CommaxForecastResponse | null>(null);
     const [commaxBacktest, setCommaxBacktest] = useState<CommaxBacktestResponse | null>(null);
     const [commaxLoading, setCommaxLoading] = useState(false);
+    const selectedCommaxItem = commaxItems.find((item) => item.item_code === commaxItemCode);
 
     const chartData = data?.predictions.map((point) => ({
         ...point,
@@ -408,11 +409,12 @@ export default function Dashboard() {
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                                     <label className="flex-1 text-sm font-medium text-slate-700">품목 선택
                                         <select value={commaxItemCode} onChange={(event) => setCommaxItemCode(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                                            {commaxItems.map((item) => <option key={item.item_code} value={item.item_code}>{item.item_code} · {item.item_name}</option>)}
+                                            {['Smooth', 'Erratic', 'Intermittent'].map((pattern) => <optgroup key={pattern} label={pattern}>{commaxItems.filter((item) => item.pattern === pattern).map((item) => <option key={item.item_code} value={item.item_code}>{item.item_code} · {item.item_name}</option>)}</optgroup>)}
                                         </select>
                                     </label>
                                     <button type="button" onClick={() => void loadCommaxForecast()} disabled={commaxLoading || !commaxItems.length} className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{commaxLoading ? '예측 중…' : '향후 6개월 예측'}</button>
                                 </div>
+                                {selectedCommaxItem && <p className="mt-2 text-xs text-slate-600">선택된 수요 패턴: <strong>{selectedCommaxItem.pattern}</strong></p>}
                                 {commaxForecast && <div className="mt-4"><p className="text-sm text-slate-700"><strong>{commaxForecast.item_code}</strong> · {commaxForecast.pattern} · 선택 모델 <strong>{modelName(commaxForecast.champion)}</strong> (검증 WAPE {commaxForecast.benchmark_wape.toFixed(2)}%)</p><div className="mt-3 h-[220px]"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={commaxForecast.predictions}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" /><YAxis /><Tooltip /><Line dataKey="forecast" stroke="#b45309" strokeWidth={3} dot /></ComposedChart></ResponsiveContainer></div></div>}
                                 {commaxBacktest && <div className="mt-6"><p className="text-sm font-semibold text-slate-800">최근 6개월 검증: 실제 출하량 vs 당시 예측 <span className="font-normal text-slate-600">(holdout WAPE {commaxBacktest.holdout_wape.toFixed(2)}%)</span></p><div className="mt-3 h-[260px]"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={commaxBacktest.points}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" /><YAxis /><Tooltip formatter={(value, name) => [Number(value).toLocaleString(), name === 'actual' ? 'Actual shipments' : name === 'forecast' ? 'Forecast' : 'Absolute error']} /><Legend /><Line dataKey="actual" name="actual" stroke="#0f766e" strokeWidth={3} dot /><Line dataKey="forecast" name="forecast" stroke="#b45309" strokeWidth={3} dot strokeDasharray="5 4" /></ComposedChart></ResponsiveContainer></div><p className="mt-2 text-xs text-slate-500">초록선은 실제 출하량, 주황 점선은 당시 학습 데이터만으로 계산한 예측값입니다.</p></div>}
                             </div>
