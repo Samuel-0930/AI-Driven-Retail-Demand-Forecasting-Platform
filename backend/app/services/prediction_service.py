@@ -17,7 +17,11 @@ class PredictionService:
         if experiment is None:
             return None
 
-        filter_string = f"params.store_id = '{store_id}' AND params.product_id = '{product_id}'"
+        filter_string = (
+            "attributes.status = 'FINISHED' "
+            f"AND params.store_id = '{store_id}' "
+            f"AND params.product_id = '{product_id}'"
+        )
         runs = mlflow.search_runs(
             experiment_ids=[experiment.experiment_id],
             filter_string=filter_string,

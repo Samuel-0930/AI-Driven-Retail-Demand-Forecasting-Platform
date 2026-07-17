@@ -32,7 +32,7 @@ The development server proxies `/api` and `/health` to `http://127.0.0.1:8000`. 
 ```bash
 cp .env.example .env
 docker compose up --build
-docker compose exec backend python backend/train_baseline.py
+docker compose exec backend python backend/bootstrap_demo.py
 ```
 
-The repository does not contain trained model artifacts. Train at least one store/product model before using the prediction form.
+The repository does not contain trained model artifacts. `bootstrap_demo.py` trains the default store 1 / product 1 synthetic demo model, so the prediction form works immediately after the command completes.

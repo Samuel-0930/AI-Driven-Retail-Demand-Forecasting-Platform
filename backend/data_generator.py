@@ -32,7 +32,7 @@ def generate_retail_data(start_date='2023-01-01', days=730, n_stores=5, n_produc
                 # 3. Trend (Slight growth over time)
                 trend = 1 + 0.0005 * (date - dates[0]).days
                 
-                # 4. Causal Factors: Promotions & Holidays
+                # 4. Causal factor: promotions
                 is_promo = 0
                 if np.random.random() < 0.15: # 15% chance of promotion
                     is_promo = 1
