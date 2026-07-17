@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { api, ApiError, BacktestResponse, CommaxEvaluationResponse, CommaxForecastResponse, CommaxItem, PredictionResponse } from '../lib/api';
+import { api, ApiError, BacktestResponse, CommaxBacktestResponse, CommaxEvaluationResponse, CommaxForecastResponse, CommaxItem, PredictionResponse } from '../lib/api';
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, Bar, BarChart, Legend } from 'recharts';
 import { Calendar, ShoppingBag, Store, TrendingUp, Activity, ChartNoAxesCombined } from 'lucide-react';
 
@@ -22,6 +22,7 @@ export default function Dashboard() {
     const [commaxItems, setCommaxItems] = useState<CommaxItem[]>([]);
     const [commaxItemCode, setCommaxItemCode] = useState('SDC000036AXX');
     const [commaxForecast, setCommaxForecast] = useState<CommaxForecastResponse | null>(null);
+    const [commaxBacktest, setCommaxBacktest] = useState<CommaxBacktestResponse | null>(null);
     const [commaxLoading, setCommaxLoading] = useState(false);
 
     const chartData = data?.predictions.map((point) => ({
@@ -63,7 +64,11 @@ export default function Dashboard() {
 
     const loadCommaxForecast = async () => {
         setCommaxLoading(true);
-        try { setCommaxForecast(await api.getCommaxForecast(commaxItemCode, 6)); }
+        try {
+            const [forecast, backtest] = await Promise.all([api.getCommaxForecast(commaxItemCode, 6), api.getCommaxBacktest(commaxItemCode, 6)]);
+            setCommaxForecast(forecast);
+            setCommaxBacktest(backtest);
+        }
         finally { setCommaxLoading(false); }
     };
 
@@ -409,6 +414,7 @@ export default function Dashboard() {
                                     <button type="button" onClick={() => void loadCommaxForecast()} disabled={commaxLoading || !commaxItems.length} className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{commaxLoading ? '예측 중…' : '향후 6개월 예측'}</button>
                                 </div>
                                 {commaxForecast && <div className="mt-4"><p className="text-sm text-slate-700"><strong>{commaxForecast.item_code}</strong> · {commaxForecast.pattern} · 선택 모델 <strong>{commaxForecast.champion === 'croston_sba' ? 'Croston/SBA' : commaxForecast.champion}</strong> (검증 WAPE {commaxForecast.benchmark_wape.toFixed(2)}%)</p><div className="mt-3 h-[220px]"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={commaxForecast.predictions}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" /><YAxis /><Tooltip /><Line dataKey="forecast" stroke="#b45309" strokeWidth={3} dot /></ComposedChart></ResponsiveContainer></div></div>}
+                                {commaxBacktest && <div className="mt-6"><p className="text-sm font-semibold text-slate-800">최근 6개월 검증: 실제 출하량 vs 당시 예측 <span className="font-normal text-slate-600">(holdout WAPE {commaxBacktest.holdout_wape.toFixed(2)}%)</span></p><div className="mt-3 h-[260px]"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={commaxBacktest.points}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" /><YAxis /><Tooltip formatter={(value, name) => [Number(value).toLocaleString(), name === 'actual' ? 'Actual shipments' : name === 'forecast' ? 'Forecast' : 'Absolute error']} /><Legend /><Line dataKey="actual" name="actual" stroke="#0f766e" strokeWidth={3} dot /><Line dataKey="forecast" name="forecast" stroke="#b45309" strokeWidth={3} dot strokeDasharray="5 4" /></ComposedChart></ResponsiveContainer></div><p className="mt-2 text-xs text-slate-500">초록선은 실제 출하량, 주황 점선은 당시 학습 데이터만으로 계산한 예측값입니다.</p></div>}
                             </div>
                         </section>}
                     </div>

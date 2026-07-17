@@ -72,6 +72,10 @@ export interface CommaxForecastResponse {
     item_code: string; item_name: string; pattern: string; champion: string; benchmark_wape: number;
     predictions: Array<{ date: string; forecast: number }>;
 }
+export interface CommaxBacktestResponse {
+    item_code: string; pattern: string; champion: string; benchmark_wape: number; holdout_wape: number;
+    points: Array<{ date: string; actual: number; forecast: number; absolute_error: number }>;
+}
 
 export class ApiError extends Error {
     constructor(
@@ -119,6 +123,7 @@ export const api = {
 
     getCommaxItems: async (): Promise<CommaxItem[]> => (await axios.get(`${API_BASE_URL}/commax/items`, { timeout: 10_000 })).data,
     getCommaxForecast: async (itemCode: string, horizonMonths: number): Promise<CommaxForecastResponse> => (await axios.get(`${API_BASE_URL}/commax/forecast`, { params: { item_code: itemCode, horizon_months: horizonMonths }, timeout: 10_000 })).data,
+    getCommaxBacktest: async (itemCode: string, horizonMonths: number): Promise<CommaxBacktestResponse> => (await axios.get(`${API_BASE_URL}/commax/backtest`, { params: { item_code: itemCode, horizon_months: horizonMonths }, timeout: 10_000 })).data,
 
     checkHealth: async (): Promise<{ status: string }> => {
         const response = await axios.get(`${API_BASE_URL.replace('/api/v1', '')}/health`);

@@ -59,3 +59,13 @@ def get_commax_forecast(item_code: str, horizon_months: int = Query(default=6, g
         raise HTTPException(status_code=404, detail="Commax item was not found.")
     except CommaxDataNotFoundError:
         raise HTTPException(status_code=404, detail="Commax source data or benchmark is not available locally.")
+
+
+@router.get("/commax/backtest")
+def get_commax_backtest(item_code: str, horizon_months: int = Query(default=6, ge=1, le=12)):
+    try:
+        return commax_service.backtest(item_code, horizon_months)
+    except CommaxItemNotFoundError:
+        raise HTTPException(status_code=404, detail="Commax item was not found.")
+    except CommaxDataNotFoundError:
+        raise HTTPException(status_code=404, detail="Commax source data or benchmark is not available locally.")
