@@ -54,7 +54,7 @@ def get_commax_items():
 @router.get("/commax/forecast")
 def get_commax_forecast(item_code: str, horizon_months: int = Query(default=6, ge=1, le=12)):
     try:
-        return commmax_service.forecast(item_code, horizon_months)
+        return commax_service.forecast(item_code, horizon_months)
     except CommaxItemNotFoundError:
         raise HTTPException(status_code=404, detail="Commax item was not found.")
     except CommaxDataNotFoundError:
