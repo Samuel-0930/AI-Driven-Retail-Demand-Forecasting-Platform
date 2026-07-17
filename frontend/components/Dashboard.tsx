@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { api, ApiError, BacktestResponse, CommaxEvaluationResponse, PredictionResponse } from '../lib/api';
+import { api, ApiError, BacktestResponse, CommaxEvaluationResponse, CommaxForecastResponse, CommaxItem, PredictionResponse } from '../lib/api';
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, Bar, BarChart, Legend } from 'recharts';
 import { Calendar, ShoppingBag, Store, TrendingUp, Activity, ChartNoAxesCombined } from 'lucide-react';
 
@@ -19,6 +19,10 @@ export default function Dashboard() {
     const [evaluationLoading, setEvaluationLoading] = useState(false);
     const [evaluationMessage, setEvaluationMessage] = useState('');
     const [commaxEvaluation, setCommaxEvaluation] = useState<CommaxEvaluationResponse | null>(null);
+    const [commaxItems, setCommaxItems] = useState<CommaxItem[]>([]);
+    const [commaxItemCode, setCommaxItemCode] = useState('SDC000036AXX');
+    const [commaxForecast, setCommaxForecast] = useState<CommaxForecastResponse | null>(null);
+    const [commaxLoading, setCommaxLoading] = useState(false);
 
     const chartData = data?.predictions.map((point) => ({
         ...point,
@@ -54,7 +58,14 @@ export default function Dashboard() {
     useEffect(() => {
         void loadEvaluation(1, 1);
         api.getCommaxEvaluation().then(setCommaxEvaluation).catch(() => setCommaxEvaluation(null));
+        api.getCommaxItems().then(setCommaxItems).catch(() => setCommaxItems([]));
     }, []);
+
+    const loadCommaxForecast = async () => {
+        setCommaxLoading(true);
+        try { setCommaxForecast(await api.getCommaxForecast(commaxItemCode, 6)); }
+        finally { setCommaxLoading(false); }
+    };
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
@@ -388,6 +399,17 @@ export default function Dashboard() {
                             </div>
                             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">{commaxEvaluation.pattern_results.map((result) => <div key={result.pattern} className="rounded-lg border border-amber-200 bg-white p-3 text-sm text-amber-950"><p className="font-semibold">{result.pattern} · {result.items}개 품목</p><p className="mt-1">Champion: <strong>{result.champion === 'croston_sba' ? 'Croston/SBA' : result.champion}</strong></p><p className="mt-1 text-xs">WAPE {result.models[result.champion as keyof typeof result.models].wape.toFixed(2)}%</p></div>)}</div>
                             <p className="mt-4 text-sm leading-6 text-amber-950">현재 평가에서는 Croston/SBA가 모든 패턴에서 champion입니다. Prophet은 현 단계에서 채택하지 않으며, 다음 실험은 품절·프로모션·외생 변수의 시점 정합성을 검증한 뒤 진행합니다.</p>
+                            <div className="mt-5 rounded-lg border border-amber-200 bg-white p-4">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                                    <label className="flex-1 text-sm font-medium text-slate-700">품목 선택
+                                        <select value={commaxItemCode} onChange={(event) => setCommaxItemCode(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                                            {commaxItems.map((item) => <option key={item.item_code} value={item.item_code}>{item.item_code} · {item.item_name}</option>)}
+                                        </select>
+                                    </label>
+                                    <button type="button" onClick={() => void loadCommaxForecast()} disabled={commaxLoading || !commaxItems.length} className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{commaxLoading ? '예측 중…' : '향후 6개월 예측'}</button>
+                                </div>
+                                {commaxForecast && <div className="mt-4"><p className="text-sm text-slate-700"><strong>{commaxForecast.item_code}</strong> · {commaxForecast.pattern} · 선택 모델 <strong>{commaxForecast.champion === 'croston_sba' ? 'Croston/SBA' : commaxForecast.champion}</strong> (검증 WAPE {commaxForecast.benchmark_wape.toFixed(2)}%)</p><div className="mt-3 h-[220px]"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={commaxForecast.predictions}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" /><YAxis /><Tooltip /><Line dataKey="forecast" stroke="#b45309" strokeWidth={3} dot /></ComposedChart></ResponsiveContainer></div></div>}
+                            </div>
                         </section>}
                     </div>
                 </div>
