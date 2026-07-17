@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -45,10 +45,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
       setLoading(true);
       setError("");
       try {
@@ -57,22 +54,19 @@ export default function Dashboard() {
           api.getCommaxItems(),
           api.getCommaxBacktest(DEFAULT_ITEM, 6),
         ]);
-        if (!active) return;
         setEvaluation(evaluationResult);
         setItems(itemResult);
         setBacktest(backtestResult);
       } catch {
-        if (active) setError("분석 결과를 불러오지 못했습니다. API 서버 상태를 확인해 주세요.");
+        setError("분석 결과를 불러오지 못했습니다. 무료 데모 서버가 시작되는 중일 수 있으니 잠시 후 다시 시도해 주세요.");
       } finally {
-        if (active) setLoading(false);
+        setLoading(false);
       }
-    };
-
-    void loadDashboard();
-    return () => {
-      active = false;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const selectedItem = items.find((item) => item.item_code === itemCode);
   const groupedItems = useMemo(
@@ -158,8 +152,16 @@ export default function Dashboard() {
         </section>
 
         {error && (
-          <div role="alert" className="mt-10 border-l-2 border-red-600 bg-white px-4 py-3 text-sm text-red-700">
-            {error}
+          <div role="alert" className="mt-10 flex flex-wrap items-center justify-between gap-4 border-l-2 border-red-600 bg-white px-4 py-3 text-sm text-red-700">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => void loadDashboard()}
+              disabled={loading}
+              className="font-semibold text-teal-700 underline underline-offset-4 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              다시 시도
+            </button>
           </div>
         )}
 
