@@ -58,8 +58,13 @@ export interface CommaxEvaluationResponse {
     items: number;
     horizon_months: number;
     folds: number;
-    prophet: MetricSummary;
-    seasonal_naive: MetricSummary;
+    models: Record<'seasonal_naive' | 'croston_sba' | 'prophet', MetricSummary>;
+    pattern_results: Array<{
+        pattern: string;
+        items: number;
+        champion: string;
+        models: Record<'seasonal_naive' | 'croston_sba' | 'prophet', MetricSummary>;
+    }>;
 }
 
 export class ApiError extends Error {

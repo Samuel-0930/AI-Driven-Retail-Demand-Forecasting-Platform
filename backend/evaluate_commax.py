@@ -1,4 +1,4 @@
-"""Portfolio evaluation for the top-volume Commax monthly shipment items."""
+"""Pattern-aware benchmark for the top-volume Commax monthly shipment items."""
 
 import json
 from pathlib import Path
@@ -12,6 +12,7 @@ HORIZON_MONTHS = 6
 FOLDS = 3
 SEASONAL_PERIOD = 12
 TOP_ITEMS = 20
+SBA_ALPHAS = (0.05, 0.1, 0.2, 0.3)
 
 
 def metrics(actual: np.ndarray, predicted: np.ndarray, train: np.ndarray) -> dict[str, float]:
@@ -23,41 +24,80 @@ def metrics(actual: np.ndarray, predicted: np.ndarray, train: np.ndarray) -> dic
     return {"mae": round(mae, 2), "wape": round(wape, 2), "mase": round(mase, 3)}
 
 
+def sba_forecast(train: np.ndarray, horizon: int, alpha: float) -> np.ndarray:
+    nonzero = np.flatnonzero(train > 0)
+    if len(nonzero) == 0:
+        return np.zeros(horizon)
+    demand = float(train[nonzero[0]])
+    interval = float(nonzero[0] + 1)
+    elapsed = 1
+    for value in train[nonzero[0] + 1:]:
+        if value > 0:
+            demand += alpha * (value - demand)
+            interval += alpha * (elapsed - interval)
+            elapsed = 1
+        else:
+            elapsed += 1
+    return np.full(horizon, (1 - alpha / 2) * demand / max(interval, 1))
+
+
+def best_sba_forecast(train: np.ndarray, horizon: int) -> np.ndarray:
+    if len(train) <= SEASONAL_PERIOD:
+        return sba_forecast(train, horizon, 0.1)
+    actual = train[SEASONAL_PERIOD:]
+    candidates = []
+    for alpha in SBA_ALPHAS:
+        one_step = np.array([sba_forecast(train[:index], 1, alpha)[0] for index in range(SEASONAL_PERIOD, len(train))])
+        candidates.append((np.abs(actual - one_step).mean(), alpha))
+    return sba_forecast(train, horizon, min(candidates)[1])
+
+
+def aggregate(model_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]]) -> dict[str, float]:
+    actual = np.concatenate([row[0] for row in model_rows])
+    prediction = np.concatenate([row[1] for row in model_rows])
+    train = np.concatenate([row[2] for row in model_rows])
+    return metrics(actual, prediction, train)
+
+
 def evaluate_commax(data_path: str | Path) -> dict:
-    df = pd.read_csv(data_path, usecols=["품목코드", "품목명", "period", "value"])
+    df = pd.read_csv(data_path, usecols=["품목코드", "품목명", "Pattern", "period", "value"])
     df["period"] = pd.to_datetime(df["period"])
     top_codes = df.groupby("품목코드")["value"].sum().nlargest(TOP_ITEMS).index
-    results = []
-    prophet_actuals: list[float] = []
-    prophet_predictions: list[float] = []
-    naive_actuals: list[float] = []
-    naive_predictions: list[float] = []
+    by_pattern: dict[str, dict[str, list[tuple[np.ndarray, np.ndarray, np.ndarray]]]] = {}
 
     for code in top_codes:
         item = df[df["품목코드"] == code].sort_values("period").reset_index(drop=True)
-        fold_metrics = []
-        for fold, origin in enumerate(range(len(item) - FOLDS * HORIZON_MONTHS, len(item), HORIZON_MONTHS), start=1):
+        pattern = item["Pattern"].iloc[0]
+        by_pattern.setdefault(pattern, {"seasonal_naive": [], "croston_sba": [], "prophet": []})
+        for origin in range(len(item) - FOLDS * HORIZON_MONTHS, len(item), HORIZON_MONTHS):
             train, test = item.iloc[:origin], item.iloc[origin:origin + HORIZON_MONTHS]
+            train_values, actual = train["value"].to_numpy(), test["value"].to_numpy()
             model = Prophet(yearly_seasonality=True, weekly_seasonality=False, daily_seasonality=False)
             model.fit(train.rename(columns={"period": "ds", "value": "y"})[["ds", "y"]])
-            prediction = model.predict(model.make_future_dataframe(periods=len(test))).tail(len(test))["yhat"].to_numpy()
-            naive = np.resize(train["value"].to_numpy()[-SEASONAL_PERIOD:], len(test))
-            actual = test["value"].to_numpy()
-            fold_metrics.append({"fold": fold, "prophet": metrics(actual, prediction, train["value"].to_numpy()), "seasonal_naive": metrics(actual, naive, train["value"].to_numpy())})
-            prophet_actuals.extend(actual); prophet_predictions.extend(prediction)
-            naive_actuals.extend(actual); naive_predictions.extend(naive)
-        results.append({"item_code": code, "item_name": item["품목명"].iloc[0], "total_shipments": float(item["value"].sum()), "folds": fold_metrics})
+            prophet = model.predict(model.make_future_dataframe(periods=len(test))).tail(len(test))["yhat"].to_numpy()
+            seasonal_naive = np.resize(train_values[-SEASONAL_PERIOD:], len(test))
+            croston_sba = best_sba_forecast(train_values, len(test))
+            for name, prediction in (("seasonal_naive", seasonal_naive), ("croston_sba", croston_sba), ("prophet", prophet)):
+                by_pattern[pattern][name].append((actual, prediction, train_values))
 
-    train_scale = df[df["품목코드"].isin(top_codes)].sort_values(["품목코드", "period"])["value"].to_numpy()
+    pattern_results = []
+    all_models = {"seasonal_naive": [], "croston_sba": [], "prophet": []}
+    for pattern, model_rows in sorted(by_pattern.items()):
+        model_metrics = {name: aggregate(rows) for name, rows in model_rows.items()}
+        champion = min(model_metrics, key=lambda name: model_metrics[name]["wape"])
+        pattern_results.append({"pattern": pattern, "items": len({code for code in top_codes if df[df['품목코드'] == code]['Pattern'].iloc[0] == pattern}), "models": model_metrics, "champion": champion})
+        for name, rows in model_rows.items():
+            all_models[name].extend(rows)
+
+    model_metrics = {name: aggregate(rows) for name, rows in all_models.items()}
     return {
         "dataset_type": "commax_monthly_shipments",
         "scope": "Top 20 items by cumulative shipments",
         "period": f"{df['period'].min().date()} to {df['period'].max().date()}",
-        "evaluation_method": "Three rolling 6-month origins; Prophet uses no external variables. Baseline repeats the same month from the previous year.",
-        "items": len(results), "horizon_months": HORIZON_MONTHS, "folds": FOLDS,
-        "prophet": metrics(np.asarray(prophet_actuals), np.asarray(prophet_predictions), train_scale),
-        "seasonal_naive": metrics(np.asarray(naive_actuals), np.asarray(naive_predictions), train_scale),
-        "item_results": results,
+        "evaluation_method": "Three rolling 6-month origins. Prophet has no external variables; seasonal-naive repeats prior-year month; Croston/SBA tunes alpha using training history only.",
+        "items": len(top_codes), "horizon_months": HORIZON_MONTHS, "folds": FOLDS,
+        "models": model_metrics,
+        "pattern_results": pattern_results,
     }
 
 
@@ -67,8 +107,9 @@ def main() -> None:
     output = root / "data/processed/commax_evaluation.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Saved Commax evaluation to {output}")
-    print(result["prophet"], result["seasonal_naive"])
+    print(f"Saved Commax benchmark to {output}")
+    for result_by_pattern in result["pattern_results"]:
+        print(result_by_pattern["pattern"], result_by_pattern["champion"], result_by_pattern["models"])
 
 
 if __name__ == "__main__":

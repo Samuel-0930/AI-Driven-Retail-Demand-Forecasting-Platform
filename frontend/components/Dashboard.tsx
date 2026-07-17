@@ -381,11 +381,13 @@ export default function Dashboard() {
                         {commaxEvaluation && <section className="rounded-xl border border-amber-200 bg-amber-50 p-6" aria-labelledby="commax-heading">
                             <h2 id="commax-heading" className="text-xl font-bold text-amber-950">Commax 실데이터 검증</h2>
                             <p className="mt-1 text-sm text-amber-900">{commaxEvaluation.scope} · {commaxEvaluation.period} · {commaxEvaluation.folds}회 rolling 6개월 검증</p>
-                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <MetricCard label="Prophet WAPE" value={`${commaxEvaluation.prophet.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.prophet.mase.toFixed(3)}`} tone="indigo" />
-                                <MetricCard label="Seasonal-naive WAPE" value={`${commaxEvaluation.seasonal_naive.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.seasonal_naive.mase.toFixed(3)}`} tone="slate" />
+                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <MetricCard label="Croston/SBA WAPE" value={`${commaxEvaluation.models.croston_sba.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.models.croston_sba.mase.toFixed(3)}`} tone="blue" />
+                                <MetricCard label="Seasonal-naive WAPE" value={`${commaxEvaluation.models.seasonal_naive.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.models.seasonal_naive.mase.toFixed(3)}`} tone="slate" />
+                                <MetricCard label="Prophet WAPE" value={`${commaxEvaluation.models.prophet.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.models.prophet.mase.toFixed(3)}`} tone="indigo" />
                             </div>
-                            <p className="mt-4 text-sm leading-6 text-amber-950">기준선이 Prophet보다 낮은 WAPE를 기록했습니다. 따라서 현 단계에서 Prophet을 채택하지 않으며, intermittent 수요별 모델 분리와 외생 변수 시점 검증이 다음 과제입니다.</p>
+                            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">{commaxEvaluation.pattern_results.map((result) => <div key={result.pattern} className="rounded-lg border border-amber-200 bg-white p-3 text-sm text-amber-950"><p className="font-semibold">{result.pattern} · {result.items}개 품목</p><p className="mt-1">Champion: <strong>{result.champion === 'croston_sba' ? 'Croston/SBA' : result.champion}</strong></p><p className="mt-1 text-xs">WAPE {result.models[result.champion as keyof typeof result.models].wape.toFixed(2)}%</p></div>)}</div>
+                            <p className="mt-4 text-sm leading-6 text-amber-950">현재 평가에서는 Croston/SBA가 모든 패턴에서 champion입니다. Prophet은 현 단계에서 채택하지 않으며, 다음 실험은 품절·프로모션·외생 변수의 시점 정합성을 검증한 뒤 진행합니다.</p>
                         </section>}
                     </div>
                 </div>
