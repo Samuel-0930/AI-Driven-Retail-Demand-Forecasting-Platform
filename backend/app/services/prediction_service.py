@@ -1,10 +1,16 @@
 import mlflow
 import pandas as pd
+import json
+from pathlib import Path
 from functools import lru_cache
 from ..models.schemas import PredictionRequest, PredictionResponse, PredictionPoint
 
 
 class ModelNotFoundError(Exception):
+    pass
+
+
+class EvaluationNotFoundError(Exception):
     pass
 
 
@@ -62,3 +68,10 @@ class PredictionService:
             product_id=request.product_id,
             predictions=predictions
         )
+
+    def get_evaluation(self, store_id: int, product_id: int) -> dict:
+        project_root = Path(__file__).resolve().parents[3]
+        evaluation_path = project_root / "data" / "processed" / f"evaluation_store_{store_id}_product_{product_id}.json"
+        if not evaluation_path.exists():
+            raise EvaluationNotFoundError
+        return json.loads(evaluation_path.read_text(encoding="utf-8"))

@@ -1,8 +1,8 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
-from ..models.schemas import PredictionRequest, PredictionResponse
-from ..services.prediction_service import ModelNotFoundError, PredictionService
+from fastapi import APIRouter, HTTPException, Query
+from ..models.schemas import BacktestResponse, PredictionRequest, PredictionResponse
+from ..services.prediction_service import EvaluationNotFoundError, ModelNotFoundError, PredictionService
 
 router = APIRouter()
 service = PredictionService()
@@ -17,3 +17,17 @@ def predict_demand(request: PredictionRequest):
     except Exception:
         logger.exception("Prediction request failed")
         raise HTTPException(status_code=500, detail="Prediction is temporarily unavailable")
+
+
+@router.get("/evaluation", response_model=BacktestResponse)
+def get_evaluation(store_id: int = Query(gt=0), product_id: int = Query(gt=0)):
+    try:
+        return service.get_evaluation(store_id, product_id)
+    except EvaluationNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail="No evaluation is available for this store and product. Run bootstrap_demo.py first.",
+        )
+    except Exception:
+        logger.exception("Evaluation request failed")
+        raise HTTPException(status_code=500, detail="Evaluation results are temporarily unavailable")

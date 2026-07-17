@@ -8,7 +8,7 @@
 
 - 모델: `Prophet` + `is_promo` 외생 변수
 - 학습 데이터: `data/raw/retail_sales.csv`의 결정론적 합성 데이터
-- 검증 방식: 시계열 마지막 30일 holdout
+- 검증 방식: 마지막 구간 하나의 holdout 외에, 30일 horizon의 rolling-origin backtest 3회와 주간 seasonal-naive 기준선을 비교
 - 기록: MLflow에 매장/상품, 데이터 유형, 학습·검증 행 수, MAE, RMSE, 모델 artifact를 기록
 - 기본 실행: `python backend/bootstrap_demo.py`가 기본 조합(매장 1, 상품 1)을 학습
 
@@ -26,7 +26,7 @@ API는 요청 조합의 완료된 MLflow run 중 **MAE가 가장 낮은 모델**
 
 - holdout 평가에서 실제 관측된 프로모션 값을 사용합니다. 미래 프로모션 계획이 완벽히 알려진 상황을 가정하므로, 실제 운영 성능보다 낙관적일 수 있습니다.
 - 단일 30일 holdout만 사용합니다. 계절·기간 변화에 대한 안정성을 검증하려면 rolling-origin backtest와 naive seasonal baseline 비교가 필요합니다.
-- MAE와 RMSE만 기록합니다. 실무 도입 전에는 WAPE/MASE, 품절·과예측 비용, 구간 예측의 coverage를 추가해야 합니다.
+- rolling backtest는 MAE·WAPE·MASE를 제공합니다. 실무 도입 전에는 품절·과예측 비용과 구간 예측의 coverage를 추가해야 합니다.
 - 합성 데이터이므로 실수요 일반화 성능을 주장하지 않습니다.
 
 ## Responsible use

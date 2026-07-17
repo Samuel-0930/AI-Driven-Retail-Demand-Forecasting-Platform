@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
-import { api, ApiError, PredictionResponse } from '../lib/api';
-import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from 'recharts';
-import { Calendar, ShoppingBag, Store, TrendingUp, Activity } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { api, ApiError, BacktestResponse, PredictionResponse } from '../lib/api';
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, Bar, BarChart, Legend } from 'recharts';
+import { Calendar, ShoppingBag, Store, TrendingUp, Activity, ChartNoAxesCombined } from 'lucide-react';
 
 export default function Dashboard() {
     const [storeId, setStoreId] = useState('1');
@@ -15,6 +15,9 @@ export default function Dashboard() {
     const [data, setData] = useState<PredictionResponse | null>(null);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [evaluation, setEvaluation] = useState<BacktestResponse | null>(null);
+    const [evaluationLoading, setEvaluationLoading] = useState(false);
+    const [evaluationMessage, setEvaluationMessage] = useState('');
 
     const chartData = data?.predictions.map((point) => ({
         ...point,
@@ -23,6 +26,33 @@ export default function Dashboard() {
             Math.max(point.lower_bound, point.upper_bound),
         ] as [number, number],
     }));
+
+    const evaluationChartData = evaluation?.fold_results.map((fold) => ({
+        fold: `Fold ${fold.fold}`,
+        prophet: fold.prophet.wape,
+        seasonalNaive: fold.seasonal_naive.wape,
+    }));
+
+    const loadEvaluation = async (targetStoreId: number, targetProductId: number) => {
+        setEvaluationLoading(true);
+        setEvaluationMessage('');
+        try {
+            setEvaluation(await api.getEvaluation(targetStoreId, targetProductId));
+        } catch (err) {
+            setEvaluation(null);
+            if (err instanceof ApiError && err.status === 404) {
+                setEvaluationMessage('No backtest is available yet. Run bootstrap_demo.py to generate the reproducible demo results.');
+            } else {
+                setEvaluationMessage('Evaluation results are temporarily unavailable.');
+            }
+        } finally {
+            setEvaluationLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void loadEvaluation(1, 1);
+    }, []);
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
@@ -66,6 +96,11 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLoadEvaluation = () => {
+        const validated = validateForm();
+        if (validated) void loadEvaluation(validated.parsedStoreId, validated.parsedProductId);
     };
 
     return (
@@ -195,7 +230,16 @@ export default function Dashboard() {
                                         "Generate Forecast"
                                     )}
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={handleLoadEvaluation}
+                                    disabled={evaluationLoading}
+                                    className="w-full border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    {evaluationLoading ? 'Loading validation…' : 'Load model validation'}
+                                </button>
                             </form>
+                            <p className="mt-3 text-xs leading-5 text-slate-500">Validation is available for combinations prepared by the demo bootstrap.</p>
                         </div>
                     </div>
 
@@ -296,9 +340,54 @@ export default function Dashboard() {
                                 </div>
                             )}
                         </div>
+
+                        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6" aria-labelledby="validation-heading">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
+                                <div>
+                                    <h2 id="validation-heading" className="text-xl font-bold text-slate-800 flex items-center gap-2"><ChartNoAxesCombined className="w-5 h-5 text-indigo-600" />Model validation</h2>
+                                    <p className="mt-1 text-sm text-slate-500">Rolling backtest against a weekly seasonal-naive baseline.</p>
+                                </div>
+                                {evaluation && <span className="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">Synthetic demo · {evaluation.folds} folds × {evaluation.horizon_days} days</span>}
+                            </div>
+
+                            {evaluation ? (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                        <MetricCard label="Prophet WAPE" value={`${evaluation.prophet.wape.toFixed(2)}%`} detail={`MASE ${evaluation.prophet.mase.toFixed(3)}`} tone="blue" />
+                                        <MetricCard label="Seasonal-naive WAPE" value={`${evaluation.seasonal_naive.wape.toFixed(2)}%`} detail={`MASE ${evaluation.seasonal_naive.mase.toFixed(3)}`} tone="slate" />
+                                        <MetricCard label="WAPE difference" value={`${(evaluation.seasonal_naive.wape - evaluation.prophet.wape).toFixed(2)} pp`} detail={evaluation.prophet.wape < evaluation.seasonal_naive.wape ? 'Prophet is lower in this demo.' : 'Baseline is lower in this demo.'} tone="indigo" />
+                                    </div>
+                                    <div className="h-[270px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={evaluationChartData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                <XAxis dataKey="fold" tickLine={false} axisLine={false} />
+                                                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
+                                                <Tooltip formatter={(value, name) => [`${Number(value).toFixed(2)}%`, name === 'prophet' ? 'Prophet' : 'Seasonal naive']} />
+                                                <Legend formatter={(value) => value === 'prophet' ? 'Prophet' : 'Seasonal naive'} />
+                                                <Bar dataKey="prophet" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                                                <Bar dataKey="seasonalNaive" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">{evaluation.evaluation_method} This is a synthetic-data quality check, not evidence of performance on the Commax shipment data.</p>
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-500">{evaluationLoading ? 'Loading validation results…' : evaluationMessage || 'Select a prepared store and product to view validation results.'}</div>
+                            )}
+                        </section>
                     </div>
                 </div>
             </main>
         </div>
     );
+}
+
+function MetricCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: 'blue' | 'slate' | 'indigo' }) {
+    const styles = {
+        blue: 'border-blue-100 bg-blue-50 text-blue-700',
+        slate: 'border-slate-200 bg-slate-50 text-slate-700',
+        indigo: 'border-indigo-100 bg-indigo-50 text-indigo-700',
+    };
+    return <div className={`rounded-xl border p-4 ${styles[tone]}`}><p className="text-sm font-medium">{label}</p><p className="mt-2 text-2xl font-bold">{value}</p><p className="mt-1 text-xs opacity-80">{detail}</p></div>;
 }

@@ -61,3 +61,15 @@ def test_predict_returns_404_when_model_is_missing(monkeypatch):
     })
 
     assert response.status_code == 404
+
+
+def test_evaluation_returns_404_when_results_are_missing(monkeypatch):
+    def raise_evaluation_not_found(_, __):
+        from backend.app.services.prediction_service import EvaluationNotFoundError
+        raise EvaluationNotFoundError
+
+    monkeypatch.setattr(routes.service, "get_evaluation", raise_evaluation_not_found)
+    response = client.get("/api/v1/evaluation?store_id=1&product_id=1")
+
+    assert response.status_code == 404
+    assert "No evaluation is available" in response.json()["detail"]

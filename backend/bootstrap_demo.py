@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from data_generator import generate_retail_data
+from evaluate_backtest import evaluate_and_save
 from train_baseline import train_baseline
 
 
@@ -24,10 +25,16 @@ def ensure_demo_data() -> None:
 def main() -> None:
     ensure_demo_data()
     mae, rmse = train_baseline(DATA_PATH, DEFAULT_STORE_ID, DEFAULT_PRODUCT_ID)
+    evaluation = evaluate_and_save(DATA_PATH, DEFAULT_STORE_ID, DEFAULT_PRODUCT_ID)
     print(
         "Demo model is ready for "
         f"store {DEFAULT_STORE_ID}, product {DEFAULT_PRODUCT_ID} "
         f"(MAE: {mae:.2f}, RMSE: {rmse:.2f})."
+    )
+    print(
+        "Rolling evaluation: "
+        f"Prophet WAPE {evaluation['prophet']['wape']:.2f}% vs "
+        f"seasonal naive WAPE {evaluation['seasonal_naive']['wape']:.2f}%."
     )
 
 

@@ -29,3 +29,30 @@ class PredictionResponse(BaseModel):
     store_id: int
     product_id: int
     predictions: List[PredictionPoint]
+
+
+class MetricSummary(BaseModel):
+    mae: float
+    wape: float
+    mase: float
+
+
+class BacktestFold(BaseModel):
+    fold: int
+    train_end: date
+    test_start: date
+    test_end: date
+    prophet: MetricSummary
+    seasonal_naive: MetricSummary
+
+
+class BacktestResponse(BaseModel):
+    store_id: int
+    product_id: int
+    dataset_type: str
+    evaluation_method: str
+    horizon_days: int
+    folds: int
+    prophet: MetricSummary
+    seasonal_naive: MetricSummary
+    fold_results: List[BacktestFold]

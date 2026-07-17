@@ -8,3 +8,6 @@ node_modules/
 .next/
 mlruns/
 data/raw/Final*
+data/processed/evaluation_*.json
+.playwright-cli/
+output/playwright/

@@ -23,6 +23,33 @@ export interface PredictionResponse {
     predictions: PredictionPoint[];
 }
 
+export interface MetricSummary {
+    mae: number;
+    wape: number;
+    mase: number;
+}
+
+export interface BacktestFold {
+    fold: number;
+    train_end: string;
+    test_start: string;
+    test_end: string;
+    prophet: MetricSummary;
+    seasonal_naive: MetricSummary;
+}
+
+export interface BacktestResponse {
+    store_id: number;
+    product_id: number;
+    dataset_type: string;
+    evaluation_method: string;
+    horizon_days: number;
+    folds: number;
+    prophet: MetricSummary;
+    seasonal_naive: MetricSummary;
+    fold_results: BacktestFold[];
+}
+
 export class ApiError extends Error {
     constructor(
         message: string,
@@ -41,6 +68,22 @@ export const api = {
             if (axios.isAxiosError(error)) {
                 const detail = error.response?.data?.detail;
                 throw new ApiError(typeof detail === 'string' ? detail : 'Prediction request failed', error.response?.status);
+            }
+            throw error;
+        }
+    },
+
+    getEvaluation: async (storeId: number, productId: number): Promise<BacktestResponse> => {
+        try {
+            const response = await axios.get<BacktestResponse>(`${API_BASE_URL}/evaluation`, {
+                params: { store_id: storeId, product_id: productId },
+                timeout: 10_000,
+            });
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const detail = error.response?.data?.detail;
+                throw new ApiError(typeof detail === 'string' ? detail : 'Evaluation request failed', error.response?.status);
             }
             throw error;
         }
