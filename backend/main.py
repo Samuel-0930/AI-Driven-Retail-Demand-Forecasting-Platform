@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -5,17 +7,18 @@ from prometheus_fastapi_instrumentator import Instrumentator
 app = FastAPI(
     title="Demand Forecasting API",
     description="API for Retail Demand Forecasting",
-    version="0.1.0"
+    version="0.1.0",
+    docs_url="/docs" if os.getenv("ENABLE_API_DOCS", "true").lower() == "true" else None,
+    redoc_url=None,
 )
 
 # Instrumentator setup
 Instrumentator().instrument(app).expose(app)
 
 # CORS Setup
-origins = [
-    "http://localhost:3000",  # Next.js frontend
-    "http://127.0.0.1:3000",
-]
+origins = [origin.strip() for origin in os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+).split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,

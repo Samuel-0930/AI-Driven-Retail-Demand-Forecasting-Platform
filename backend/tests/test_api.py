@@ -15,6 +15,16 @@ def test_health_check():
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
 
+
+def test_public_commax_dashboard_data_is_available():
+    evaluation = client.get("/api/v1/commax/evaluation")
+    items = client.get("/api/v1/commax/items")
+
+    assert evaluation.status_code == 200
+    assert evaluation.json()["items"] == 20
+    assert items.status_code == 200
+    assert len(items.json()) == 20
+
 def test_predict_rejects_invalid_forecast_window():
     response = client.post("/api/v1/predict", json={
         "store_id": 1,

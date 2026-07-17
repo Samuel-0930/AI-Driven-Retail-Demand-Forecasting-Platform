@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -18,8 +19,8 @@ class CommaxItemNotFoundError(Exception):
 class CommaxForecastService:
     def __init__(self):
         self.root = Path(__file__).resolve().parents[3]
-        self.data_path = self.root / "data/raw/Final_KR_modeling_long_with_external_data.csv"
-        self.evaluation_path = self.root / "data/processed/commax_evaluation.json"
+        self.data_path = Path(os.getenv("COMMAX_DATA_PATH", self.root / "data/public/commax_dashboard_top20.csv"))
+        self.evaluation_path = Path(os.getenv("COMMAX_EVALUATION_PATH", self.root / "data/public/commax_evaluation.json"))
 
     def _data(self) -> pd.DataFrame:
         if not self.data_path.exists():

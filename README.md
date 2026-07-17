@@ -87,9 +87,11 @@ cd frontend
 npm run dev
 ```
 
-### 2. 실제 데이터 대시보드 재현
+### 2. 실제 데이터 기반 공개 데모
 
-원본 COMMAX CSV는 저장소에 포함하지 않습니다. 사용 권한이 있는 원본 파일을 아래 경로에 두고 benchmark를 생성하면 실제 데이터 대시보드가 활성화됩니다.
+저장소에는 대시보드에 필요한 상위 20개 품목·5개 필수 컬럼과 사전 계산된 benchmark가 포함되어 있습니다. 따라서 원본 CSV 없이도 실제 데이터 기반 비교 화면을 실행할 수 있습니다.
+
+원본 COMMAX CSV는 저장소에 포함하지 않습니다. 사용 권한이 있는 원본 파일로 공개 데모용 데이터를 다시 생성하려면 아래 경로에 원본을 둡니다.
 
 ```text
 data/raw/Final_KR_modeling_long_with_external_data.csv
@@ -97,9 +99,10 @@ data/raw/Final_KR_modeling_long_with_external_data.csv
 
 ```bash
 PYTHONPATH=. venv/bin/python backend/evaluate_commax.py
+PYTHONPATH=. venv/bin/python backend/prepare_public_demo_data.py
 ```
 
-이 명령은 `data/processed/commax_evaluation.json`을 생성합니다. 두 파일 모두 원본 데이터 및 파생 평가 결과이므로 Git에서 제외되어 있습니다.
+첫 번째 명령은 전체 benchmark를 계산하고, 두 번째 명령은 `data/public/`에 공개 데모용 최소 데이터셋을 생성합니다. 원본 CSV와 전체 파생 결과는 Git에서 제외됩니다.
 
 ### 3. 합성 데이터 엔지니어링 데모
 

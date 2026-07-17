@@ -1,4 +1,5 @@
 import mlflow
+import os
 import pandas as pd
 import json
 from pathlib import Path
@@ -78,7 +79,7 @@ class PredictionService:
 
     def get_commax_evaluation(self) -> dict:
         project_root = Path(__file__).resolve().parents[3]
-        evaluation_path = project_root / "data" / "processed" / "commax_evaluation.json"
+        evaluation_path = Path(os.getenv("COMMAX_EVALUATION_PATH", project_root / "data/public/commax_evaluation.json"))
         if not evaluation_path.exists():
             raise EvaluationNotFoundError
         return json.loads(evaluation_path.read_text(encoding="utf-8"))
