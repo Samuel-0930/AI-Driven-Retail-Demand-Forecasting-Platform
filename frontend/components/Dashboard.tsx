@@ -173,6 +173,9 @@ export default function Dashboard() {
               <p className="mt-4 leading-7 text-slate-600">
                 전체 평균만 비교하지 않고 수요 패턴별 WAPE가 가장 낮은 모델을 선택했습니다. 변동형에는 계절 Croston, 나머지 패턴에는 Croston/SBA가 우세했습니다.
               </p>
+              <p className="mt-4 border-l-2 border-slate-300 pl-4 text-sm leading-6 text-slate-500">
+                <span className="font-semibold text-slate-700">WAPE란?</span> 전체 실제 출하량 대비 절대 예측 오차의 비율입니다. <span className="font-semibold text-teal-700">낮을수록 실제값에 가까운 예측</span>입니다.
+              </p>
               <div className="mt-8 border-l-2 border-teal-700 pl-5">
                 <p className="text-sm text-slate-500">분석 결론</p>
                 <p className="mt-2 text-lg font-medium leading-7">
