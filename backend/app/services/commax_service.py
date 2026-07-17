@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from prophet import Prophet
 
-from ...evaluate_commax import SEASONAL_PERIOD, best_sba_forecast
+from ...evaluate_commax import SEASONAL_PERIOD, best_sba_forecast, best_tsb_forecast, seasonal_sba_forecast
 
 
 class CommaxDataNotFoundError(Exception):
@@ -43,10 +43,14 @@ class CommaxForecastService:
         result = next(result for result in evaluation["pattern_results"] if result["pattern"] == pattern)
         return result["champion"], result
 
-    def _predict(self, item: pd.DataFrame, horizon_months: int, champion: str):
+    def _predict(self, item: pd.DataFrame, horizon_months: int, champion: str, future_dates: pd.Series):
         values = item["value"].to_numpy()
         if champion == "croston_sba":
             return best_sba_forecast(values, horizon_months)
+        if champion == "seasonal_croston_sba":
+            return seasonal_sba_forecast(item, future_dates)
+        if champion == "tsb":
+            return best_tsb_forecast(values, horizon_months)
         if champion == "seasonal_naive":
             return pd.Series(values[-SEASONAL_PERIOD:]).repeat((horizon_months + SEASONAL_PERIOD - 1) // SEASONAL_PERIOD).to_numpy()[:horizon_months]
         model = Prophet(yearly_seasonality=True, weekly_seasonality=False, daily_seasonality=False)
@@ -61,9 +65,8 @@ class CommaxForecastService:
             raise CommaxItemNotFoundError
         pattern = item["Pattern"].iloc[0]
         champion, pattern_result = self._champion_for_pattern(pattern)
-        predictions = self._predict(item, horizon_months, champion)
-
         future_dates = pd.date_range(item["period"].iloc[-1] + pd.offsets.MonthBegin(1), periods=horizon_months, freq="MS")
+        predictions = self._predict(item, horizon_months, champion, pd.Series(future_dates))
         return {
             "item_code": item_code,
             "item_name": item["품목명"].iloc[0],
@@ -81,7 +84,7 @@ class CommaxForecastService:
         pattern = item["Pattern"].iloc[0]
         champion, pattern_result = self._champion_for_pattern(pattern)
         train, actual = item.iloc[:-horizon_months], item.iloc[-horizon_months:]
-        predictions = self._predict(train, horizon_months, champion)
+        predictions = self._predict(train, horizon_months, champion, actual["period"])
         rows = []
         for (_, row), prediction in zip(actual.iterrows(), predictions):
             predicted = max(0, round(float(prediction), 0))

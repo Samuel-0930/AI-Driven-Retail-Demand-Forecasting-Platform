@@ -58,12 +58,12 @@ export interface CommaxEvaluationResponse {
     items: number;
     horizon_months: number;
     folds: number;
-    models: Record<'seasonal_naive' | 'croston_sba' | 'prophet', MetricSummary>;
+    models: Record<string, MetricSummary>;
     pattern_results: Array<{
         pattern: string;
         items: number;
         champion: string;
-        models: Record<'seasonal_naive' | 'croston_sba' | 'prophet', MetricSummary>;
+        models: Record<string, MetricSummary>;
     }>;
 }
 
