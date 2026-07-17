@@ -52,6 +52,8 @@
 3. 검증 방법과 해석 범위
 4. 선택 품목의 실제 출하량 vs 당시 예측
 
+![Demand Signal 대시보드 — 수요 패턴별 champion 모델과 검증 결과](docs/images/demand-signal-dashboard.jpg)
+
 대시보드: `http://127.0.0.1:3000`
 
 API 문서: `http://127.0.0.1:8000/docs`
@@ -125,6 +127,12 @@ Docker 환경에서는 대시보드가 `http://localhost:3000`, MLflow가 `http:
 - 실제 운영 전에는 품절, 판촉 계획, 리드타임, 예측 구간 coverage, 과소·과대 예측 비용을 추가로 검증해야 합니다.
 
 자세한 내용은 [COMMAX EDA 사례 요약](COMMAX_EDA_CASE_STUDY.md), [Data Card](DATA_CARD.md), [Model Card](MODEL_CARD.md)를 참고하세요.
+
+## What I learned
+
+1. **모델의 복잡도보다 검증 설계가 먼저다.** Prophet을 기본값으로 두지 않고 간헐 수요 특화 baseline을 함께 평가해, 패턴별 모델 선택이라는 결론을 얻었습니다.
+2. **전체 평균은 중요한 차이를 숨길 수 있다.** Erratic·Intermittent·Smooth 품목군을 분리하자, 같은 모델이 모든 수요 특성에서 최선은 아니라는 점이 드러났습니다.
+3. **분석 결과는 의사결정 근거로 보여야 한다.** 모델 점수만 제시하지 않고, 대시보드에서 실제 출하량과 당시 예측·절대 오차를 함께 보여 주도록 설계했습니다.
 
 ## 기술 스택
 
