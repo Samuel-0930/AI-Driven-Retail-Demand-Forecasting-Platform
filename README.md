@@ -2,6 +2,12 @@
 
 > 수요 패턴을 분류하고, 시계열 교차 검증으로 품목별 예측 모델을 선택하는 리테일 수요 예측 분석 포트폴리오
 
+## Live Demo
+
+[**Demand Signal 대시보드 열기**](https://demand-signal-sepia.vercel.app) · [GitHub Repository](https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform)
+
+공개 데모에서는 품목을 선택해 **실제 출하량 vs 당시 예측**, 월별 절대 오차, 수요 패턴별 champion 모델을 확인할 수 있습니다. 원본 CSV는 공개하지 않고, 분석에 필요한 상위 20개 품목의 최소 공개 데이터셋만 제공합니다.
+
 ## 한눈에 보기
 
 **간헐 수요는 하나의 모델로 설명할 수 없다**는 질문에서 출발했습니다. COMMAX 실제 월별 출하 데이터를 수요 패턴별로 나누고, 단순 기준선부터 Prophet까지 동일한 rolling-origin 검증으로 비교했습니다. 결과적으로 복잡한 모델 하나를 전체에 적용하기보다, 품목군의 수요 특성에 맞춰 모델을 선택하는 방식이 더 설득력 있었습니다.
@@ -43,9 +49,9 @@
 | 제품화 | FastAPI 분석 API, Next.js 대시보드, 품목별 비교 인터랙션 |
 | 재현성 | 합성 수요 데모, MLflow 실험 추적, Docker Compose, GitHub Actions |
 
-## 대시보드
+## 대시보드와 배포
 
-로컬에서 대시보드를 열면 다음 흐름으로 볼 수 있습니다.
+대시보드는 다음 흐름으로 분석 결과를 보여 줍니다.
 
 1. 분석 문제와 데이터 범위
 2. 패턴별 champion 모델과 전체 모델 비교
@@ -54,13 +60,14 @@
 
 ![Demand Signal 대시보드 — 수요 패턴별 champion 모델과 검증 결과](docs/images/demand-signal-dashboard.jpg)
 
-공개 데모: [demand-signal-sepia.vercel.app](https://demand-signal-sepia.vercel.app)
+| 구성 | 서비스 | 역할 |
+| --- | --- | --- |
+| 공개 대시보드 | [Vercel](https://demand-signal-sepia.vercel.app) | Next.js 인터페이스와 API 프록시 |
+| 분석 API | [Render](https://demand-signal-api.onrender.com/health) | FastAPI와 공개용 benchmark 데이터 제공 |
 
-공개 API 상태: [demand-signal-api.onrender.com/health](https://demand-signal-api.onrender.com/health)
+Render Free 플랜 특성상 장시간 미접속 뒤 첫 요청은 시작 시간이 추가로 걸릴 수 있습니다.
 
-로컬 대시보드: `http://127.0.0.1:3000`
-
-API 문서: `http://127.0.0.1:8000/docs`
+로컬 대시보드: `http://127.0.0.1:3000` · 로컬 API 문서: `http://127.0.0.1:8000/docs`
 
 ## 실행 방법
 
