@@ -50,6 +50,18 @@ export interface BacktestResponse {
     fold_results: BacktestFold[];
 }
 
+export interface CommaxEvaluationResponse {
+    dataset_type: string;
+    scope: string;
+    period: string;
+    evaluation_method: string;
+    items: number;
+    horizon_months: number;
+    folds: number;
+    prophet: MetricSummary;
+    seasonal_naive: MetricSummary;
+}
+
 export class ApiError extends Error {
     constructor(
         message: string,
@@ -87,6 +99,11 @@ export const api = {
             }
             throw error;
         }
+    },
+
+    getCommaxEvaluation: async (): Promise<CommaxEvaluationResponse> => {
+        const response = await axios.get<CommaxEvaluationResponse>(`${API_BASE_URL}/commax/evaluation`, { timeout: 10_000 });
+        return response.data;
     },
 
     checkHealth: async (): Promise<{ status: string }> => {

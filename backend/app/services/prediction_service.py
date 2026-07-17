@@ -75,3 +75,10 @@ class PredictionService:
         if not evaluation_path.exists():
             raise EvaluationNotFoundError
         return json.loads(evaluation_path.read_text(encoding="utf-8"))
+
+    def get_commax_evaluation(self) -> dict:
+        project_root = Path(__file__).resolve().parents[3]
+        evaluation_path = project_root / "data" / "processed" / "commax_evaluation.json"
+        if not evaluation_path.exists():
+            raise EvaluationNotFoundError
+        return json.loads(evaluation_path.read_text(encoding="utf-8"))

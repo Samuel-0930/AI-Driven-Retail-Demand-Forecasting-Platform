@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { api, ApiError, BacktestResponse, PredictionResponse } from '../lib/api';
+import { api, ApiError, BacktestResponse, CommaxEvaluationResponse, PredictionResponse } from '../lib/api';
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, Bar, BarChart, Legend } from 'recharts';
 import { Calendar, ShoppingBag, Store, TrendingUp, Activity, ChartNoAxesCombined } from 'lucide-react';
 
@@ -18,6 +18,7 @@ export default function Dashboard() {
     const [evaluation, setEvaluation] = useState<BacktestResponse | null>(null);
     const [evaluationLoading, setEvaluationLoading] = useState(false);
     const [evaluationMessage, setEvaluationMessage] = useState('');
+    const [commaxEvaluation, setCommaxEvaluation] = useState<CommaxEvaluationResponse | null>(null);
 
     const chartData = data?.predictions.map((point) => ({
         ...point,
@@ -52,6 +53,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         void loadEvaluation(1, 1);
+        api.getCommaxEvaluation().then(setCommaxEvaluation).catch(() => setCommaxEvaluation(null));
     }, []);
 
     const validateForm = () => {
@@ -376,6 +378,15 @@ export default function Dashboard() {
                                 <div className="rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-500">{evaluationLoading ? 'Loading validation results…' : evaluationMessage || 'Select a prepared store and product to view validation results.'}</div>
                             )}
                         </section>
+                        {commaxEvaluation && <section className="rounded-xl border border-amber-200 bg-amber-50 p-6" aria-labelledby="commax-heading">
+                            <h2 id="commax-heading" className="text-xl font-bold text-amber-950">Commax 실데이터 검증</h2>
+                            <p className="mt-1 text-sm text-amber-900">{commaxEvaluation.scope} · {commaxEvaluation.period} · {commaxEvaluation.folds}회 rolling 6개월 검증</p>
+                            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <MetricCard label="Prophet WAPE" value={`${commaxEvaluation.prophet.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.prophet.mase.toFixed(3)}`} tone="indigo" />
+                                <MetricCard label="Seasonal-naive WAPE" value={`${commaxEvaluation.seasonal_naive.wape.toFixed(2)}%`} detail={`MASE ${commaxEvaluation.seasonal_naive.mase.toFixed(3)}`} tone="slate" />
+                            </div>
+                            <p className="mt-4 text-sm leading-6 text-amber-950">기준선이 Prophet보다 낮은 WAPE를 기록했습니다. 따라서 현 단계에서 Prophet을 채택하지 않으며, intermittent 수요별 모델 분리와 외생 변수 시점 검증이 다음 과제입니다.</p>
+                        </section>}
                     </div>
                 </div>
             </main>

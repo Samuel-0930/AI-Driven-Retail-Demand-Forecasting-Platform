@@ -9,5 +9,6 @@ node_modules/
 mlruns/
 data/raw/Final*
 data/processed/evaluation_*.json
+data/processed/commax_evaluation.json
 .playwright-cli/
 output/playwright/

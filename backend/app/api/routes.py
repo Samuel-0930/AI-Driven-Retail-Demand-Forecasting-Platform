@@ -31,3 +31,11 @@ def get_evaluation(store_id: int = Query(gt=0), product_id: int = Query(gt=0)):
     except Exception:
         logger.exception("Evaluation request failed")
         raise HTTPException(status_code=500, detail="Evaluation results are temporarily unavailable")
+
+
+@router.get("/commax/evaluation")
+def get_commax_evaluation():
+    try:
+        return service.get_commax_evaluation()
+    except EvaluationNotFoundError:
+        raise HTTPException(status_code=404, detail="Commax evaluation has not been generated yet.")
