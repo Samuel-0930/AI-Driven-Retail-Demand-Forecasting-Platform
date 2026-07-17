@@ -1,95 +1,101 @@
 # Demand Signal
 
-> 수요 패턴을 분류하고, 시계열 교차 검증으로 품목별 예측 모델을 선택하는 리테일 수요 예측 분석 포트폴리오
+> **패턴별 검증으로 리테일 수요 예측 모델을 선택하고, 결과를 의사결정 가능한 화면으로 연결한 데이터 분석 포트폴리오**
 
-## Live Demo
+[![CI](https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform/actions/workflows/ci-cd.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Demand%20Signal-0F766E?logo=vercel&logoColor=white)](https://demand-signal-sepia.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-111827.svg)](LICENSE)
 
-[**Demand Signal 대시보드 열기**](https://demand-signal-sepia.vercel.app) · [GitHub Repository](https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform)
+[데모 열기](https://demand-signal-sepia.vercel.app) · [포트폴리오 문서](https://app.notion.com/p/3996f7e3d8288116b879fb891a6f8be0) · [분석 사례 요약](COMMAX_EDA_CASE_STUDY.md)
 
-공개 데모에서는 품목을 선택해 **실제 출하량 vs 당시 예측**, 월별 절대 오차, 예측 구간과 수요 위험도, 수요 패턴별 champion 모델을 확인할 수 있습니다. 재고 계획 화면은 사용자가 입력한 가정값으로 권장 발주량을 계산하는 시뮬레이터입니다. 원본 CSV는 공개하지 않고, 분석에 필요한 상위 20개 품목의 최소 공개 데이터셋만 제공합니다.
+![Demand Signal 대시보드](docs/images/demand-signal-dashboard.jpg)
 
-## 한눈에 보기
+## 왜 만들었나
 
-**간헐 수요는 하나의 모델로 설명할 수 없다**는 질문에서 출발했습니다. COMMAX 실제 월별 출하 데이터를 수요 패턴별로 나누고, 단순 기준선부터 Prophet까지 동일한 rolling-origin 검증으로 비교했습니다. 결과적으로 복잡한 모델 하나를 전체에 적용하기보다, 품목군의 수요 특성에 맞춰 모델을 선택하는 방식이 더 설득력 있었습니다.
+간헐적이거나 변동이 큰 수요는 하나의 복잡한 모델을 모든 품목에 적용한다고 잘 풀리지 않습니다. 이 프로젝트는 “가장 복잡한 모델은 무엇인가?” 대신 **“각 수요 패턴에서 실제로 더 정확한 모델은 무엇인가?”**를 시간 순서를 지킨 검증으로 답합니다.
 
-| 분석 범위 | 검증 설계 | 평가 대상 | 핵심 산출물 |
+실제 월별 출하 데이터를 Erratic·Intermittent·Smooth 패턴으로 나누고, baseline부터 Prophet까지 동일한 rolling-origin 검증에서 비교했습니다. 품목 선택 화면에서는 점수만 보여주지 않고 **실제 출하량 vs 당시 예측, 오차, 예측 구간**을 함께 보여 줍니다.
+
+| 데이터 범위 | 검증 설계 | 평가 대상 | 공개 산출물 |
 | --- | --- | --- | --- |
-| 20,096개 월별 관측치 · 157개 품목 | 3회 rolling origin · 회차별 6개월 | 누적 출하량 상위 20개 품목 | 패턴별 champion 모델 · 실제 vs 당시 예측 |
+| 20,096개 월별 관측치 · 157개 품목 | 3회 rolling origin · 회차별 6개월 | 누적 출하량 상위 20개 품목 | champion 모델 · holdout 비교 · 예측 구간 |
 
 ## 핵심 결과
 
-패턴별로 WAPE가 가장 낮은 모델을 champion으로 선택했습니다.
+패턴별로 WAPE가 가장 낮은 모델을 champion으로 선택했습니다. WAPE는 실제 수요 대비 누적 오차의 비율이므로 **낮을수록 좋습니다.**
 
-| 수요 패턴 | 품목 수 | 선택 모델 | WAPE |
+| 수요 패턴 | 품목 수 | Champion 모델 | WAPE |
 | --- | ---: | --- | ---: |
-| Erratic (변동형) | 6 | Seasonal Croston/SBA | 71.06% |
-| Intermittent (간헐형) | 9 | Croston/SBA | 39.01% |
-| Smooth (안정형) | 5 | Croston/SBA | 35.32% |
+| Erratic · 변동형 | 6 | Seasonal Croston/SBA | 71.06% |
+| Intermittent · 간헐형 | 9 | Croston/SBA | 39.01% |
+| Smooth · 안정형 | 5 | Croston/SBA | 35.32% |
+| 전체 비교 | 20 | Croston/SBA | **42.53%** |
 
-- 전체 평가에서도 Croston/SBA가 가장 낮은 WAPE(42.53%)를 기록했습니다.
-- Croston/SBA는 seasonal naive 대비 WAPE를 **15.82%p** 낮췄습니다. 이는 단일 복잡 모델보다 수요 패턴별 baseline 검증이 더 적합한 모델 선택으로 이어질 수 있음을 보여 줍니다.
-- Prophet은 이 평가에서 선택되지 않았습니다. 이 결과는 “더 복잡한 모델이 항상 더 좋다”는 가정을 검증 가능한 baseline과 비교해야 한다는 점을 보여 줍니다.
-- 대시보드에서는 품목을 선택해 가장 최근 6개월의 **실제 출하량 vs 당시 예측**과 월별 절대 오차를 확인할 수 있습니다.
+- Croston/SBA는 전체 비교에서 seasonal naive보다 **15.82%p 낮은 WAPE**를 기록했습니다.
+- Prophet은 이 데이터와 검증 설계에서 champion으로 선택되지 않았습니다. 복잡도가 아니라 검증 결과가 모델 선택을 이끈 사례입니다.
+- 대시보드는 WAPE뿐 아니라 MASE·MAE, 월별 절대오차와 예측 구간 coverage도 제공합니다.
 
-## 프로젝트가 보여 주는 것
+## 데모에서 확인할 수 있는 것
 
-```text
-실제 출하 데이터
-  → 수요 패턴 분류
-  → seasonal naive · Croston/SBA · Seasonal Croston/SBA · TSB · Prophet 비교
-  → rolling-origin 검증
-  → 패턴별 champion 선택
-  → 품목별 실제 출하량과 과거 시점 예측 비교
-```
+1. **수요 패턴별 모델 선택** — 5개 후보 모델을 같은 시계열 검증으로 비교한 근거
+2. **실제 출하량 vs 당시 예측** — 선택 품목의 최근 6개월 holdout과 월별 오차
+3. **예측 불확실성** — 예측 구간, coverage, 수요 변동 위험도
+4. **가정 기반 재고 계획** — 현재고·입고 예정·리드 타임·서비스 수준을 입력해 계획 수요와 권장 발주량을 계산
 
-| 영역 | 구현 내용 |
-| --- | --- |
-| 데이터 분석 | 상위 출하 품목 선정, 수요 패턴별 분리, WAPE·MASE 기반 비교 |
-| 모델링 | seasonal naive, Croston/SBA, Seasonal Croston/SBA, TSB, Prophet benchmark |
-| 검증 | 미래 6개월을 세 번 순차적으로 숨기는 rolling-origin 평가 |
-| 제품화 | FastAPI 분석 API, Next.js 대시보드, 품목별 비교·예측 구간·가정 기반 발주 시뮬레이션 |
-| 재현성 | 합성 수요 데모, MLflow 실험 추적, Docker Compose, GitHub Actions |
-
-## 대시보드와 배포
-
-대시보드는 다음 흐름으로 분석 결과를 보여 줍니다.
-
-1. 분석 문제와 데이터 범위
-2. 패턴별 champion 모델과 전체 모델 비교
-3. 검증 방법과 해석 범위
-4. 선택 품목의 실제 출하량 vs 당시 예측, 예측 구간과 오차 지표
-5. 가정 기반 재고 계획 시뮬레이터: 리드 타임 수요·안전재고·권장 발주량
-
-![Demand Signal 대시보드 — 수요 패턴별 champion 모델과 검증 결과](docs/images/demand-signal-dashboard.jpg)
-
-| 구성 | 서비스 | 역할 |
-| --- | --- | --- |
-| 공개 대시보드 | [Vercel](https://demand-signal-sepia.vercel.app) | Next.js 인터페이스와 API 프록시 |
-| 분석 API | [Render](https://demand-signal-api.onrender.com/health) | FastAPI와 공개용 benchmark 데이터 제공 |
-
-Render Free 플랜 특성상 장시간 미접속 뒤 첫 요청은 시작 시간이 추가로 걸릴 수 있습니다.
-
-### 가정 기반 재고 계획 시뮬레이터
-
-품목별 forecast 결과를 실제 의사결정 언어로 연결하기 위해, 현재고·입고 예정·리드 타임·목표 서비스 수준을 입력하면 아래 값을 계산합니다.
+<details>
+<summary>재고 계획 시뮬레이터의 계산 방식</summary>
 
 | 산출물 | 계산 방식 |
 | --- | --- |
-| 리드 타임 수요 | 선택한 champion 모델의 리드 타임 기간 forecast 합계 |
-| 안전재고 | 해당 품목의 과거 절대오차 분포에서 목표 서비스 수준 분위수를 선택 |
+| 리드 타임 수요 | 선택된 champion 모델의 리드 타임 기간 forecast 합계 |
+| 안전재고 | 품목별 과거 절대오차 분포에서 목표 서비스 수준 분위수 선택 |
 | 계획 수요 | 리드 타임 수요 + 안전재고 |
 | 권장 발주량 | `max(0, 계획 수요 - (현재고 + 입고 예정))` |
 | 재고 위험도 | 가용 재고가 forecast·계획 수요를 충족하는지에 따라 낮음/보통/높음 |
 
-**중요한 한계:** 공개 데이터셋에는 실제 재고, 입고 예정, 공급 리드 타임이 없습니다. 따라서 이 기능은 사용자가 입력한 값을 바탕으로 한 **가정 기반 시뮬레이터**이며, 실제 재고 운영 성과나 품절 확률을 주장하지 않습니다.
+</details>
 
-로컬 대시보드: `http://127.0.0.1:3000` · 로컬 API 문서: `http://127.0.0.1:8000/docs`
+## 분석 흐름
 
-## 실행 방법
+```mermaid
+flowchart LR
+    A["월별 출하 데이터"] --> B["수요 패턴 분류"]
+    B --> C["5개 모델 benchmark"]
+    C --> D["3 × 6개월 rolling validation"]
+    D --> E["패턴별 champion 선택"]
+    E --> F["실제 vs 당시 예측 · 예측 구간"]
+    F --> G["가정 기반 재고 계획"]
+```
 
-### 1. 로컬 개발 환경
+| 단계 | 구현 |
+| --- | --- |
+| 분류 | 원본 분석 데이터의 Pattern 라벨로 Erratic·Intermittent·Smooth 품목군을 분리 |
+| 후보 모델 | Seasonal naive, Croston/SBA, Seasonal Croston/SBA, TSB, Prophet |
+| 검증 | 미래 6개월을 순차적으로 숨기는 3회 rolling-origin 평가 |
+| 평가 | WAPE, MASE, MAE와 품목별 holdout 오차 |
+| 제품화 | FastAPI 분석 API, Next.js 대시보드, Vercel·Render 배포 |
 
-필수 조건: Python 3.11, Node.js 20+, `uv`
+## 시스템 구성
+
+```mermaid
+flowchart LR
+    U["사용자"] --> W["Next.js 대시보드\nVercel"]
+    W --> A["FastAPI 분석 API\nRender"]
+    A --> P["사전 계산된 공개 benchmark\nTop 20 품목"]
+    D["원본 COMMAX 출하 데이터\n비공개"] --> E["평가·공개 데이터 생성"]
+    E --> P
+```
+
+| 구성 | 역할 |
+| --- | --- |
+| [Vercel 대시보드](https://demand-signal-sepia.vercel.app) | 사용자 인터페이스와 API 프록시 |
+| [Render API](https://demand-signal-api.onrender.com/health) | benchmark·품목별 holdout·계획 시뮬레이션 API |
+| `data/public/` | 원본 CSV 없이도 데모를 실행하기 위한 최소 공개 데이터셋 |
+| Docker Compose + MLflow | 합성 수요 데이터에서 재현하는 엔지니어링 트랙 |
+
+## 빠른 실행
+
+필수 조건: Python 3.11, Node.js 20+, [`uv`](https://docs.astral.sh/uv/)
 
 ```bash
 git clone https://github.com/Samuel-0930/AI-Driven-Retail-Demand-Forecasting-Platform.git
@@ -98,27 +104,24 @@ cd AI-Driven-Retail-Demand-Forecasting-Platform
 uv venv venv --python 3.11
 uv pip install --python venv/bin/python -r backend/requirements.txt
 
-cd frontend
-npm ci
-cd ..
+cd frontend && npm ci && cd ..
 ```
 
-백엔드와 프런트엔드를 각각 실행합니다.
+터미널 두 개에서 실행합니다.
 
 ```bash
+# terminal 1 — API: http://127.0.0.1:8000/docs
 PYTHONPATH=. venv/bin/uvicorn backend.main:app --reload
 ```
 
 ```bash
-cd frontend
-npm run dev
+# terminal 2 — dashboard: http://127.0.0.1:3000
+cd frontend && npm run dev
 ```
 
-### 2. 실제 데이터 기반 공개 데모
+### 실제 데이터로 공개용 benchmark 다시 만들기
 
-저장소에는 대시보드에 필요한 상위 20개 품목·5개 필수 컬럼과 사전 계산된 benchmark가 포함되어 있습니다. 따라서 원본 CSV 없이도 실제 데이터 기반 비교 화면을 실행할 수 있습니다.
-
-원본 COMMAX CSV는 저장소에 포함하지 않습니다. 사용 권한이 있는 원본 파일로 공개 데모용 데이터를 다시 생성하려면 아래 경로에 원본을 둡니다.
+원본 COMMAX CSV는 저장소에 포함하지 않습니다. 접근 권한이 있는 경우 아래 경로에 두고 실행합니다.
 
 ```text
 data/raw/Final_KR_modeling_long_with_external_data.csv
@@ -129,49 +132,34 @@ PYTHONPATH=. venv/bin/python backend/evaluate_commax.py
 PYTHONPATH=. venv/bin/python backend/prepare_public_demo_data.py
 ```
 
-첫 번째 명령은 전체 benchmark를 계산하고, 두 번째 명령은 `data/public/`에 공개 데모용 최소 데이터셋을 생성합니다. 원본 CSV와 전체 파생 결과는 Git에서 제외됩니다.
+## 데이터 계보와 해석 한계
 
-### 3. 합성 데이터 엔지니어링 데모
-
-실제 출하 데이터 분석과 별개로, 합성 리테일 수요 데이터에서 학습·실험 추적·API 서빙을 재현할 수 있습니다.
-
-```bash
-cp .env.example .env
-docker compose up --build
-docker compose exec backend python backend/bootstrap_demo.py
-```
-
-Docker 환경에서는 대시보드가 `http://localhost:3000`, MLflow가 `http://127.0.0.1:5001`에서 실행됩니다.
-
-## 데이터 계보와 한계
-
-이 저장소에는 두 트랙이 있습니다. 둘을 하나의 end-to-end 모델로 과장하지 않는 것이 이 프로젝트의 중요한 원칙입니다.
+이 저장소는 실제 출하 데이터 분석과 합성 데이터 기반 엔지니어링 데모를 의도적으로 분리합니다. 두 결과를 하나의 end-to-end 운영 모델 성과처럼 해석하지 않습니다.
 
 | 트랙 | 목적 | 데이터 | 성능 해석 |
 | --- | --- | --- | --- |
-| COMMAX 분석 | 수요 패턴별 benchmark와 모델 선택 | 실제 월별 출하 데이터 | 이 README의 WAPE 결과는 이 트랙에서만 산출 |
-| 합성 앱 데모 | 학습·실험·API·UI 파이프라인 재현 | 결정론적 합성 리테일 수요 데이터 | 실제 출하 데이터 성능을 의미하지 않음 |
+| COMMAX 분석 | 패턴별 benchmark와 모델 선택 | 실제 월별 출하 데이터 | 이 README의 WAPE 결과가 속하는 트랙 |
+| 합성 앱 데모 | 학습·실험·API·UI 파이프라인 재현 | 결정론적 합성 리테일 수요 | 실제 출하 데이터 성능을 의미하지 않음 |
 
-- 평가는 상위 20개 품목에 한정됩니다. 전체 157개 품목의 운영 성능으로 일반화할 수 없습니다.
-- 패턴별 WAPE는 품목군 수준의 benchmark 결과입니다. 개별 품목의 holdout 오차는 대시보드에서 별도로 확인해야 합니다.
-- 실제 재고·입고 예정·공급 리드 타임 데이터가 없으므로 권장 발주량은 가정 기반 시뮬레이션입니다. 실제 운영 전에는 해당 데이터와 품절, 판촉 계획, 예측 구간 coverage, 과소·과대 예측 비용을 함께 검증해야 합니다.
-
-자세한 내용은 [COMMAX EDA 사례 요약](COMMAX_EDA_CASE_STUDY.md), [Data Card](DATA_CARD.md), [Model Card](MODEL_CARD.md)를 참고하세요.
-
-## What I learned
-
-1. **모델의 복잡도보다 검증 설계가 먼저다.** Prophet을 기본값으로 두지 않고 간헐 수요 특화 baseline을 함께 평가해, 패턴별 모델 선택이라는 결론을 얻었습니다.
-2. **전체 평균은 중요한 차이를 숨길 수 있다.** Erratic·Intermittent·Smooth 품목군을 분리하자, 같은 모델이 모든 수요 특성에서 최선은 아니라는 점이 드러났습니다.
-3. **분석 결과는 의사결정 근거로 보여야 한다.** 모델 점수만 제시하지 않고, 대시보드에서 실제 출하량과 당시 예측·절대 오차·예측 구간을 함께 보여 주도록 설계했습니다.
-4. **의사결정 도구의 가정은 명시해야 한다.** 실제 재고 데이터가 없는 상태에서 발주량을 사실처럼 제시하지 않고, 입력값 기반 시뮬레이터와 그 한계를 화면·문서에 명확히 공개했습니다.
+- 평가는 상위 20개 품목에 한정되며, 전체 157개 품목의 운영 성능으로 일반화할 수 없습니다.
+- 패턴별 WAPE는 품목군 수준의 결과입니다. 개별 품목의 성능은 대시보드 holdout 화면에서 확인해야 합니다.
+- 실제 재고·입고 예정·공급 리드 타임 데이터가 없으므로 재고 계획은 **입력값 기반 시뮬레이터**입니다. 실제 재고 운영 성과나 품절 확률을 주장하지 않습니다.
+- 실제 운영 전에는 품절, 판촉 계획, 리드 타임, 예측 구간 coverage, 과소·과대 예측 비용을 함께 검증해야 합니다.
 
 ## 기술 스택
 
-Next.js · TypeScript · Tailwind CSS · Recharts · FastAPI · Pandas · Prophet · MLflow · Docker Compose · Prometheus · Grafana · GitHub Actions
+**Analysis & ML**: Python, Pandas, Prophet, Croston/SBA, TSB
+
+**API & UI**: FastAPI, Next.js, TypeScript, Tailwind CSS, Recharts
+
+**MLOps & Infra**: MLflow, Docker Compose, Prometheus, Grafana, GitHub Actions, Vercel, Render
 
 ## 문서
 
-- [로컬 개발 가이드](DEVELOPMENT.md)
+- [분석 사례 요약](COMMAX_EDA_CASE_STUDY.md)
+- [Data Card](DATA_CARD.md)
+- [Model Card](MODEL_CARD.md)
+- [개발 가이드](DEVELOPMENT.md)
 - [배포 가이드](DEPLOYMENT.md)
 - [개선 로드맵](PORTFOLIO_ROADMAP.md)
 - [MIT License](LICENSE)
