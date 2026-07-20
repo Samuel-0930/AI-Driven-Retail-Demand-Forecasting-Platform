@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-07-20T12:55:43.638262+00:00",
+  "generated_at": "2026-07-20T13:01:33.746160+00:00",
   "dataset_fingerprint": "ca6d9020f489493936ca9b74c19696e8156e30e8dff64a7381851edb137365b8",
-  "code_revision": "abfb8851d553a27e2b7303747c9a0dfc9bc7d9f8",
-  "evaluation_code_fingerprint": "e5eb88f4a009a42b6e15855145d9a1725803a62c6381b67426ac6be0a58f1cda",
+  "code_revision": "d9e02921075da2287416e4e012bdb2dda232110f",
+  "evaluation_code_fingerprint": "dd39f3e2ca02d64fcafe943ff3cdbfad755d96d184bb570b612d2c965d924c66",
   "evaluation_code_dirty": false,
   "dataset_type": "commax_monthly_shipments",
   "scope": "Top 20 items by cumulative shipments before the first evaluation holdout",
@@ -269,6 +269,176 @@
         "evaluation_points": 360,
         "calibration_residuals_min": 18,
         "calibration_residuals_max": 18
+      }
+    }
+  },
+  "inventory_policy_metrics": {
+    "assumptions": {
+      "policy": "Order the point forecast plus a split-conformal absolute-residual safety stock.",
+      "underage_cost_per_unit": 5.0,
+      "overage_cost_per_unit": 1.0,
+      "cost_ratio": "5:1"
+    },
+    "models": {
+      "seasonal_naive": {
+        "point_forecast": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 567030.0,
+          "stockout_units": 72080.0,
+          "excess_units": 189982.0,
+          "fill_rate": 83.95,
+          "stockout_period_rate": 36.11,
+          "assumed_cost": 550382.0
+        },
+        "80": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1098330.0,
+          "stockout_units": 2087.0,
+          "excess_units": 651289.0,
+          "fill_rate": 99.54,
+          "stockout_period_rate": 1.94,
+          "assumed_cost": 661724.0
+        },
+        "90": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1360014.0,
+          "stockout_units": 502.0,
+          "excess_units": 911388.0,
+          "fill_rate": 99.89,
+          "stockout_period_rate": 0.56,
+          "assumed_cost": 913898.0
+        }
+      },
+      "croston_sba": {
+        "point_forecast": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 445795.23,
+          "stockout_units": 97167.82,
+          "excess_units": 93835.05,
+          "fill_rate": 78.37,
+          "stockout_period_rate": 43.06,
+          "assumed_cost": 579674.15
+        },
+        "80": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 877483.54,
+          "stockout_units": 10719.08,
+          "excess_units": 439074.62,
+          "fill_rate": 97.61,
+          "stockout_period_rate": 5.28,
+          "assumed_cost": 492670.0
+        },
+        "90": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1101317.5,
+          "stockout_units": 5946.83,
+          "excess_units": 658136.33,
+          "fill_rate": 98.68,
+          "stockout_period_rate": 2.22,
+          "assumed_cost": 687870.5
+        }
+      },
+      "seasonal_croston_sba": {
+        "point_forecast": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 437091.15,
+          "stockout_units": 109235.0,
+          "excess_units": 97198.15,
+          "fill_rate": 75.68,
+          "stockout_period_rate": 46.94,
+          "assumed_cost": 643373.16
+        },
+        "80": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 877676.48,
+          "stockout_units": 8728.05,
+          "excess_units": 437276.53,
+          "fill_rate": 98.06,
+          "stockout_period_rate": 6.11,
+          "assumed_cost": 480916.79
+        },
+        "90": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1090018.9,
+          "stockout_units": 4057.54,
+          "excess_units": 644948.44,
+          "fill_rate": 99.1,
+          "stockout_period_rate": 1.39,
+          "assumed_cost": 665236.12
+        }
+      },
+      "tsb": {
+        "point_forecast": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 520678.27,
+          "stockout_units": 63542.27,
+          "excess_units": 135092.54,
+          "fill_rate": 85.85,
+          "stockout_period_rate": 31.39,
+          "assumed_cost": 452803.88
+        },
+        "80": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 926608.59,
+          "stockout_units": 8120.48,
+          "excess_units": 485601.08,
+          "fill_rate": 98.19,
+          "stockout_period_rate": 3.33,
+          "assumed_cost": 526203.49
+        },
+        "90": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1115957.64,
+          "stockout_units": 5044.36,
+          "excess_units": 671874.0,
+          "fill_rate": 98.88,
+          "stockout_period_rate": 1.67,
+          "assumed_cost": 697095.83
+        }
+      },
+      "prophet": {
+        "point_forecast": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 705889.27,
+          "stockout_units": 35142.75,
+          "excess_units": 291904.02,
+          "fill_rate": 92.18,
+          "stockout_period_rate": 26.39,
+          "assumed_cost": 467617.76
+        },
+        "80": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1245265.09,
+          "stockout_units": 3867.39,
+          "excess_units": 800004.48,
+          "fill_rate": 99.14,
+          "stockout_period_rate": 1.94,
+          "assumed_cost": 819341.42
+        },
+        "90": {
+          "evaluation_points": 360,
+          "demand_units": 449128.0,
+          "planned_units": 1451029.12,
+          "stockout_units": 1857.64,
+          "excess_units": 1003758.76,
+          "fill_rate": 99.59,
+          "stockout_period_rate": 0.83,
+          "assumed_cost": 1013046.94
+        }
       }
     }
   },

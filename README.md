@@ -36,12 +36,24 @@
 - 대시보드는 WAPE뿐 아니라 MASE·MAE, 월별 절대오차와 예측 구간 coverage도 제공합니다. MASE는 SKU·fold별로 계산한 뒤 유효한 값의 평균으로 집계합니다.
 - 전체 champion(Croston/SBA)의 80%·90% split conformal 구간은 각각 **91.94%·97.78%**의 holdout 적중률을 기록했습니다(각 forecast origin의 직전 3개 origin, 18개 절대오차만 사용).
 
+### 주문 의사결정 backtest
+
+정확도 지표가 실제 주문 행동으로 어떤 차이를 만드는지 보기 위해, 전체 champion(Croston/SBA)을 고정하고 동일한 360개 holdout 월에서 `point forecast` 주문량과 `80% split-conformal` 안전재고 주문량을 비교했습니다. 부족 단위 1개 비용을 잉여 단위 1개 비용의 5배로 둔 **가정 기반** 시뮬레이션입니다.
+
+| 주문 정책 | 부족 수량 | 충족률 | 잉여 수량 | 가정 비용 |
+| --- | ---: | ---: | ---: | ---: |
+| Point forecast | 97,168 | 78.37% | 93,835 | 579,674 |
+| 80% conformal 안전재고 | 10,719 | 97.61% | 439,075 | **492,670** |
+
+80% 정책은 부족 수량을 크게 낮추는 대신 잉여 재고를 늘립니다. 이 비용 비율에서는 가정 비용이 15.0% 낮았지만, 실제 발주 비용·보관비·폐기율·리드 타임·초기 재고가 없으므로 절감액이나 운영 성과로 해석하지 않습니다.
+
 ## 데모에서 확인할 수 있는 것
 
 1. **수요 패턴별 모델 선택** — 5개 후보 모델을 같은 시계열 검증으로 비교한 근거
 2. **실제 출하량 vs 당시 예측** — 선택 품목의 최근 6개월 holdout과 월별 오차
 3. **예측 불확실성** — 예측 구간, coverage, 수요 변동 위험도
 4. **가정 기반 재고 계획** — 현재고·입고 예정·리드 타임·서비스 수준을 입력해 계획 수요와 권장 발주량을 계산
+5. **주문 정책 검증** — point forecast와 split-conformal 안전재고 정책의 부족·잉여·가정 비용 trade-off 비교
 
 <details>
 <summary>재고 계획 시뮬레이터의 계산 방식</summary>
@@ -73,7 +85,7 @@ flowchart LR
 | 분류 | 각 fold의 학습 이력에서 ADI·CV²를 계산해 Smooth·Erratic·Intermittent·Lumpy를 분류 |
 | 후보 모델 | Seasonal naive, Croston/SBA, Seasonal Croston/SBA, TSB, Prophet |
 | 검증 | 미래 6개월을 순차적으로 숨기는 3회 rolling-origin 평가 |
-| 평가 | WAPE, MAE, SKU·fold별 MASE, split-conformal 80%·90% coverage와 평균 구간 폭 |
+| 평가 | WAPE, MAE, SKU·fold별 MASE, split-conformal 80%·90% coverage·평균 구간 폭, 주문 정책의 부족·잉여·가정 비용 |
 | 제품화 | FastAPI 분석 API, Next.js 대시보드, Vercel·Render 배포 |
 
 ## 시스템 구성
@@ -145,7 +157,7 @@ PYTHONPATH=. venv/bin/python backend/prepare_public_demo_data.py
 - 평가는 상위 20개 품목에 한정되며, 전체 157개 품목의 운영 성능으로 일반화할 수 없습니다.
 - 패턴별 WAPE는 품목군 수준의 결과입니다. 개별 품목의 성능은 대시보드 holdout 화면에서 확인해야 합니다.
 - `data/public/commax_evaluation.json`에는 schema version, 원본·공개 데이터 fingerprint, code revision, item/champion manifest, SKU×fold×model metric이 기록됩니다. 원본 CSV 자체는 포함하지 않습니다.
-- 실제 재고·입고 예정·공급 리드 타임 데이터가 없으므로 재고 계획은 **입력값 기반 시뮬레이터**입니다. 실제 재고 운영 성과나 품절 확률을 주장하지 않습니다.
+- 실제 재고·입고 예정·공급 리드 타임 데이터가 없으므로 재고 계획과 주문 정책 backtest는 **입력값·비용 비율 가정 기반 시뮬레이터**입니다. 실제 재고 운영 성과나 품절 확률, 비용 절감액을 주장하지 않습니다.
 - 예측 구간은 각 target origin보다 앞선 3개 origin의 절대오차를 사용한 split conformal 보정값입니다. 표본이 origin당 18개로 작고 수요 시계열은 비정상적일 수 있으므로, 실제 운영 전에는 기간·품목을 늘려 coverage와 과소·과대 예측 비용을 함께 검증해야 합니다.
 
 ## 기술 스택
