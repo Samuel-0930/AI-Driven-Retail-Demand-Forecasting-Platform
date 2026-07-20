@@ -32,6 +32,8 @@ MODEL_NAMES = (
 )
 INTERVAL_LEVELS = (0.8, 0.9)
 CALIBRATION_ORIGINS = 3
+UNDERAGE_COST = 5.0
+OVERAGE_COST = 1.0
 
 
 @dataclass(frozen=True)
@@ -240,6 +242,42 @@ def aggregate_intervals(
     }
 
 
+def aggregate_inventory_policy(
+    interval_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]], coverage: float | None = None
+) -> dict[str, float | int]:
+    """Backtest an order-up-to policy with a point forecast or conformal safety stock."""
+    demand_total = 0.0
+    planned_units = 0.0
+    stockout_units = 0.0
+    excess_units = 0.0
+    stockout_periods = 0
+    points = 0
+    for actual, prediction, residuals in interval_rows:
+        if coverage is None:
+            planned = np.maximum(0, prediction)
+        else:
+            _, planned, _ = conformal_bounds(prediction, residuals, coverage)
+        shortage = np.maximum(actual - planned, 0)
+        excess = np.maximum(planned - actual, 0)
+        demand_total += float(actual.sum())
+        planned_units += float(planned.sum())
+        stockout_units += float(shortage.sum())
+        excess_units += float(excess.sum())
+        stockout_periods += int(np.sum(shortage > 0))
+        points += len(actual)
+    total_cost = stockout_units * UNDERAGE_COST + excess_units * OVERAGE_COST
+    return {
+        "evaluation_points": points,
+        "demand_units": round(demand_total, 2),
+        "planned_units": round(planned_units, 2),
+        "stockout_units": round(stockout_units, 2),
+        "excess_units": round(excess_units, 2),
+        "fill_rate": round((1 - stockout_units / demand_total) * 100, 2) if demand_total else 100.0,
+        "stockout_period_rate": round(stockout_periods / points * 100, 2) if points else 0.0,
+        "assumed_cost": round(total_cost, 2),
+    }
+
+
 def aggregate(model_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]]) -> dict[str, float | int | None]:
     """Aggregate MAE/WAPE globally and MASE as a macro average over valid SKU-fold rows."""
     actual = np.concatenate([row[0] for row in model_rows])
@@ -386,6 +424,24 @@ def evaluate_commax(
         }
         for name, rows in all_intervals.items()
     }
+    inventory_policy_metrics = {
+        "assumptions": {
+            "policy": "Order the point forecast plus a split-conformal absolute-residual safety stock.",
+            "underage_cost_per_unit": UNDERAGE_COST,
+            "overage_cost_per_unit": OVERAGE_COST,
+            "cost_ratio": f"{int(UNDERAGE_COST)}:{int(OVERAGE_COST)}",
+        },
+        "models": {
+            name: {
+                "point_forecast": aggregate_inventory_policy(rows),
+                **{
+                    str(round(coverage * 100)): aggregate_inventory_policy(rows, coverage)
+                    for coverage in INTERVAL_LEVELS
+                },
+            }
+            for name, rows in all_intervals.items()
+        },
+    }
     global_champion = min(model_metrics, key=lambda name: model_metrics[name]["wape"])
     champion_manifest = {result["pattern"]: result["champion"] for result in pattern_results}
     champion_manifest["global_fallback"] = global_champion
@@ -409,6 +465,7 @@ def evaluate_commax(
         "folds": folds,
         "models": model_metrics,
         "interval_metrics": interval_metrics,
+        "inventory_policy_metrics": inventory_policy_metrics,
         "pattern_results": pattern_results,
         "fold_metrics": fold_metrics,
         "skipped_pattern_rows": skipped_pattern_rows,

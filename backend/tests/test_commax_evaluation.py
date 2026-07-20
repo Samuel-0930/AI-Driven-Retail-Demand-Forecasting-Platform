@@ -6,6 +6,7 @@ import pytest
 
 from backend.evaluate_commax import (
     aggregate,
+    aggregate_inventory_policy,
     calibration_residuals,
     classify_demand_pattern,
     conformal_bounds,
@@ -101,6 +102,21 @@ def test_calibration_residuals_do_not_read_the_target_or_future_periods(monkeypa
     )
 
 
+def test_inventory_policy_reports_the_service_cost_tradeoff():
+    rows = [(np.array([10.0, 4.0]), np.array([5.0, 8.0]), np.array([5.0]))]
+
+    point = aggregate_inventory_policy(rows)
+    conformal = aggregate_inventory_policy(rows, coverage=0.8)
+
+    assert point["stockout_units"] == 5.0
+    assert point["excess_units"] == 4.0
+    assert point["assumed_cost"] == 29.0
+    assert point["fill_rate"] == pytest.approx(64.29)
+    assert conformal["stockout_units"] == 0.0
+    assert conformal["excess_units"] == 9.0
+    assert conformal["assumed_cost"] == 9.0
+
+
 def test_evaluation_uses_fold_local_patterns_and_returns_auditable_rows(tmp_path, monkeypatch):
     periods = pd.date_range("2022-01-01", periods=20, freq="MS")
     values = [1.0] * 16 + [100.0, 1.0, 100.0, 1.0]
@@ -132,3 +148,6 @@ def test_evaluation_uses_fold_local_patterns_and_returns_auditable_rows(tmp_path
     assert interval["80"]["evaluation_points"] == 4
     assert 0 <= interval["90"]["empirical_coverage"] <= 100
     assert interval["90"]["mean_interval_width"] >= interval["80"]["mean_interval_width"]
+    policy = result["inventory_policy_metrics"]
+    assert policy["assumptions"]["cost_ratio"] == "5:1"
+    assert policy["models"]["croston_sba"]["80"]["evaluation_points"] == 4

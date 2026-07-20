@@ -72,6 +72,25 @@ export interface CommaxEvaluationResponse {
         calibration_residuals_min: number;
         calibration_residuals_max: number;
     }>>;
+    champion_manifest: Record<string, string>;
+    inventory_policy_metrics: {
+        assumptions: {
+            policy: string;
+            underage_cost_per_unit: number;
+            overage_cost_per_unit: number;
+            cost_ratio: string;
+        };
+        models: Record<string, Record<string, {
+            evaluation_points: number;
+            demand_units: number;
+            planned_units: number;
+            stockout_units: number;
+            excess_units: number;
+            fill_rate: number;
+            stockout_period_rate: number;
+            assumed_cost: number;
+        }>>;
+    };
     pattern_results: Array<{
         pattern: string;
         items: number;

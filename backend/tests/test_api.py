@@ -27,6 +27,7 @@ def test_public_commax_dashboard_data_is_available():
     assert len(artifact["item_manifest"]) == 20
     assert len(artifact["fold_metrics"]) == 60
     assert "interval_metrics" in artifact
+    assert "inventory_policy_metrics" in artifact
     assert artifact["public_data_fingerprint"]
     assert items.status_code == 200
     assert len(items.json()) == 20

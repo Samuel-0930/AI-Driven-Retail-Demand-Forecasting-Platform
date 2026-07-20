@@ -101,6 +101,8 @@ export default function Dashboard() {
         : [],
     [evaluation],
   );
+  const globalChampion = evaluation?.champion_manifest.global_fallback;
+  const inventoryPolicy = globalChampion ? evaluation?.inventory_policy_metrics.models[globalChampion] : undefined;
 
   const loadBacktest = async () => {
     setLoading(true);
@@ -303,7 +305,7 @@ export default function Dashboard() {
         <section className="pt-24">
           <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
-              <p className="text-sm font-semibold text-teal-700">02 · 품목별 검증</p>
+              <p className="text-sm font-semibold text-teal-700">03 · 품목별 검증</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight">실제 출하량 vs 당시 예측</h2>
               <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                 가장 최근 6개월을 숨긴 뒤, 그 시점에 알 수 있었던 데이터만으로 생성한 예측과 실제 출하량을 비교합니다. 예측 범위는 그 이전 검증 오차만으로 계산했습니다.
@@ -338,6 +340,31 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+
+          {inventoryPolicy && evaluation && globalChampion && (
+            <div className="mt-10 rounded-xl border border-teal-100 bg-teal-50/50 p-6 sm:p-7">
+              <p className="text-sm font-semibold text-teal-700">02 · 주문 의사결정 backtest</p>
+              <h3 className="mt-2 text-xl font-semibold">{modelLabels[globalChampion] ?? globalChampion}의 안전재고 정책 효과</h3>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                같은 360개 holdout 월에서 point forecast 주문량과 80% split-conformal 안전재고 주문량을 비교했습니다. 부족 비용 : 잉여 비용은 {evaluation.inventory_policy_metrics.assumptions.cost_ratio}으로 가정한 시뮬레이션이며, 실제 금액이나 운영 성과를 뜻하지 않습니다.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg bg-white p-4 ring-1 ring-teal-100">
+                  <p className="text-xs text-slate-500">부족 수량</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{formatNumber(inventoryPolicy.point_forecast.stockout_units)} → {formatNumber(inventoryPolicy["80"].stockout_units)}</p>
+                </div>
+                <div className="rounded-lg bg-white p-4 ring-1 ring-teal-100">
+                  <p className="text-xs text-slate-500">충족률</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{inventoryPolicy.point_forecast.fill_rate.toFixed(1)}% → {inventoryPolicy["80"].fill_rate.toFixed(1)}%</p>
+                </div>
+                <div className="rounded-lg bg-white p-4 ring-1 ring-teal-100">
+                  <p className="text-xs text-slate-500">가정 비용</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{formatNumber(inventoryPolicy.point_forecast.assumed_cost)} → {formatNumber(inventoryPolicy["80"].assumed_cost)}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-xs leading-5 text-slate-500">80% 정책은 품절 위험을 낮추는 대신 잉여 재고를 늘릴 수 있습니다. 비용 비율과 리드타임은 실제 운영 데이터로 재설정해야 합니다.</p>
+            </div>
+          )}
 
           {backtest && (
             <>
