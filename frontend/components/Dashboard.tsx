@@ -359,6 +359,7 @@ export default function Dashboard() {
                 <div className="px-5 py-4 sm:px-7">
                   <p className="text-xs text-slate-500">{backtest.interval_level}% 예측 구간 적중률</p>
                   <p className="mt-1 text-lg font-semibold tabular-nums">{backtest.interval_coverage.toFixed(1)}%</p>
+                  <p className="mt-1 text-xs text-slate-500">직전 {backtest.calibration_residuals}개 오차로 보정</p>
                 </div>
                 <div className="px-5 py-4 sm:px-7">
                   <p className="text-xs text-slate-500">수요 변동 리스크</p>
@@ -386,7 +387,7 @@ export default function Dashboard() {
                     />
                     <Legend wrapperStyle={{ fontSize: 12, paddingTop: 16 }} />
                     <Area type="monotone" dataKey="lower_bound" name="예측 구간 하한" stroke="none" fill="transparent" stackId="interval" legendType="none" />
-                    <Area type="monotone" dataKey={(point) => point.upper_bound - point.lower_bound} name="80% 예측 구간" stroke="none" fill="#99f6e4" fillOpacity={0.55} stackId="interval" />
+                    <Area type="monotone" dataKey={(point) => point.upper_bound - point.lower_bound} name={`${backtest.interval_level}% 예측 구간`} stroke="none" fill="#99f6e4" fillOpacity={0.55} stackId="interval" />
                     <Line type="monotone" dataKey="actual" name="실제 출하량" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                     <Line type="monotone" dataKey="forecast" name="당시 예측" stroke="#475569" strokeWidth={2} strokeDasharray="6 5" dot={{ r: 3 }} />
                   </ComposedChart>
@@ -400,7 +401,7 @@ export default function Dashboard() {
                       <th className="px-5 py-3 font-medium sm:px-7">월</th>
                       <th className="px-5 py-3 text-right font-medium">실제</th>
                       <th className="px-5 py-3 text-right font-medium">예측</th>
-                      <th className="px-5 py-3 text-right font-medium">80% 구간</th>
+                      <th className="px-5 py-3 text-right font-medium">{backtest.interval_level}% 구간</th>
                       <th className="px-5 py-3 text-right font-medium sm:px-7">절대 오차</th>
                     </tr>
                   </thead>

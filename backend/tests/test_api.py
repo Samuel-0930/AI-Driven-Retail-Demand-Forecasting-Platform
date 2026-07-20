@@ -26,17 +26,20 @@ def test_public_commax_dashboard_data_is_available():
     assert artifact["items"] == 20
     assert len(artifact["item_manifest"]) == 20
     assert len(artifact["fold_metrics"]) == 60
+    assert "interval_metrics" in artifact
     assert artifact["public_data_fingerprint"]
     assert items.status_code == 200
     assert len(items.json()) == 20
 
 
 def test_commax_backtest_includes_interval_and_risk_context():
-    response = client.get("/api/v1/commax/backtest?item_code=SDC000036AXX&horizon_months=6")
+    response = client.get("/api/v1/commax/backtest?item_code=SDC000036AXX&horizon_months=6&interval_level=0.9")
 
     assert response.status_code == 200
     result = response.json()
-    assert result["interval_level"] == 80
+    assert result["interval_level"] == 90
+    assert result["interval_method"] == "split_conformal_absolute_residuals"
+    assert result["calibration_residuals"] == 18
     assert result["demand_variability_risk"] in {"low", "medium", "high"}
     assert 0 <= result["interval_coverage"] <= 100
     assert result["planning_upper_total"] >= result["forecast_total"]

@@ -9,6 +9,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,8 @@ MODEL_NAMES = (
     "tsb",
     "prophet",
 )
+INTERVAL_LEVELS = (0.8, 0.9)
+CALIBRATION_ORIGINS = 3
 
 
 @dataclass(frozen=True)
@@ -170,6 +173,73 @@ def forecast_model(model_name: str, train: pd.DataFrame, future_dates: pd.Series
     raise ValueError(f"Unknown model: {model_name}")
 
 
+def conformal_quantile(absolute_residuals: Sequence[float], coverage: float) -> float:
+    """Finite-sample split-conformal radius for a two-sided prediction interval."""
+    if not 0 < coverage < 1:
+        raise ValueError("coverage must be between 0 and 1")
+    residuals = np.sort(np.asarray(absolute_residuals, dtype=float))
+    if len(residuals) == 0:
+        raise ValueError("at least one calibration residual is required")
+    rank = min(int(np.ceil((len(residuals) + 1) * coverage)), len(residuals))
+    return float(residuals[rank - 1])
+
+
+def conformal_bounds(
+    predictions: Sequence[float], absolute_residuals: Sequence[float], coverage: float
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Return non-negative split-conformal bounds and their shared residual radius."""
+    radius = conformal_quantile(absolute_residuals, coverage)
+    prediction = np.maximum(0, np.asarray(predictions, dtype=float))
+    return np.maximum(0, prediction - radius), prediction + radius, radius
+
+
+def calibration_residuals(
+    item: pd.DataFrame,
+    model_name: str,
+    origin: int,
+    horizon_months: int,
+    calibration_origins: int = CALIBRATION_ORIGINS,
+) -> np.ndarray:
+    """Use only origins strictly before ``origin`` to calibrate its forecast interval."""
+    residuals: list[float] = []
+    first_origin = origin - calibration_origins * horizon_months
+    for calibration_origin in range(first_origin, origin, horizon_months):
+        train = item.iloc[:calibration_origin]
+        test = item.iloc[calibration_origin:calibration_origin + horizon_months]
+        if len(train) <= SEASONAL_PERIOD or len(test) != horizon_months:
+            continue
+        prediction = forecast_model(model_name, train, test["period"])
+        residuals.extend(
+            abs(float(actual) - max(0, float(predicted)))
+            for actual, predicted in zip(test["value"], prediction)
+        )
+    return np.asarray(residuals, dtype=float)
+
+
+def aggregate_intervals(
+    interval_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]], coverage: float
+) -> dict[str, float | int]:
+    """Evaluate coverage and width for intervals calibrated independently at each origin."""
+    covered = 0
+    points = 0
+    widths: list[float] = []
+    calibration_counts: list[int] = []
+    for actual, prediction, residuals in interval_rows:
+        lower, upper, _ = conformal_bounds(prediction, residuals, coverage)
+        covered += int(np.sum((actual >= lower) & (actual <= upper)))
+        points += len(actual)
+        widths.extend((upper - lower).tolist())
+        calibration_counts.append(len(residuals))
+    return {
+        "nominal_coverage": round(coverage * 100),
+        "empirical_coverage": round(covered / points * 100, 2) if points else 0.0,
+        "mean_interval_width": round(float(np.mean(widths)), 2) if widths else 0.0,
+        "evaluation_points": points,
+        "calibration_residuals_min": min(calibration_counts) if calibration_counts else 0,
+        "calibration_residuals_max": max(calibration_counts) if calibration_counts else 0,
+    }
+
+
 def aggregate(model_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]]) -> dict[str, float | int | None]:
     """Aggregate MAE/WAPE globally and MASE as a macro average over valid SKU-fold rows."""
     actual = np.concatenate([row[0] for row in model_rows])
@@ -245,6 +315,7 @@ def evaluate_commax(
     by_pattern: dict[str, dict[str, list[tuple[np.ndarray, np.ndarray, np.ndarray]]]] = {}
     pattern_codes: dict[str, set[str]] = {}
     all_models = {name: [] for name in MODEL_NAMES}
+    all_intervals: dict[str, list[tuple[np.ndarray, np.ndarray, np.ndarray]]] = {name: [] for name in MODEL_NAMES}
     fold_metrics: list[dict] = []
     skipped_pattern_rows = 0
     item_manifest = []
@@ -276,6 +347,9 @@ def evaluate_commax(
                 row = (actual, prediction, train_values)
                 by_pattern[pattern][name].append(row)
                 all_models[name].append(row)
+                residuals = calibration_residuals(item, name, origin, horizon_months)
+                if len(residuals):
+                    all_intervals[name].append((actual, prediction, residuals))
                 row_models[name] = metrics(*row)
             fold_metrics.append(
                 {
@@ -305,6 +379,13 @@ def evaluate_commax(
         )
 
     model_metrics = {name: aggregate(rows) for name, rows in all_models.items()}
+    interval_metrics = {
+        name: {
+            str(round(coverage * 100)): aggregate_intervals(rows, coverage)
+            for coverage in INTERVAL_LEVELS
+        }
+        for name, rows in all_intervals.items()
+    }
     global_champion = min(model_metrics, key=lambda name: model_metrics[name]["wape"])
     champion_manifest = {result["pattern"]: result["champion"] for result in pattern_results}
     champion_manifest["global_fallback"] = global_champion
@@ -319,7 +400,7 @@ def evaluate_commax(
         "scope": "Top 20 items by cumulative shipments before the first evaluation holdout",
         "selection_cutoff": evaluation_start.date().isoformat(),
         "period": f"{df['period'].min().date()} to {df['period'].max().date()}",
-        "evaluation_method": "Three rolling 6-month origins. Demand patterns are recalculated from each fold's training history; Prophet uses month-start future periods.",
+        "evaluation_method": "Three rolling 6-month origins. Demand patterns are recalculated from each fold's training history; Prophet uses month-start future periods. Prediction intervals use split conformal absolute residuals from the three preceding origins only.",
         "items": len(top_codes),
         "item_codes": top_codes,
         "item_manifest": item_manifest,
@@ -327,6 +408,7 @@ def evaluate_commax(
         "horizon_months": horizon_months,
         "folds": folds,
         "models": model_metrics,
+        "interval_metrics": interval_metrics,
         "pattern_results": pattern_results,
         "fold_metrics": fold_metrics,
         "skipped_pattern_rows": skipped_pattern_rows,

@@ -34,6 +34,7 @@
 - Croston/SBA는 전체 비교에서 seasonal naive보다 **15.82%p 낮은 WAPE**를 기록했습니다.
 - Prophet은 월초(`MS`) 주기의 미래 시점으로 평가했으며 전체 WAPE는 73.85%였습니다. 이 데이터와 검증 설계에서 champion으로 선택되지 않았습니다.
 - 대시보드는 WAPE뿐 아니라 MASE·MAE, 월별 절대오차와 예측 구간 coverage도 제공합니다. MASE는 SKU·fold별로 계산한 뒤 유효한 값의 평균으로 집계합니다.
+- 전체 champion(Croston/SBA)의 80%·90% split conformal 구간은 각각 **91.94%·97.78%**의 holdout 적중률을 기록했습니다(각 forecast origin의 직전 3개 origin, 18개 절대오차만 사용).
 
 ## 데모에서 확인할 수 있는 것
 
@@ -48,7 +49,7 @@
 | 산출물 | 계산 방식 |
 | --- | --- |
 | 리드 타임 수요 | 선택된 champion 모델의 리드 타임 기간 forecast 합계 |
-| 안전재고 | 품목별 과거 절대오차 분포에서 목표 서비스 수준 분위수 선택 |
+| 안전재고 | 품목별 직전 3개 forecast origin의 절대오차에서 목표 서비스 수준 split-conformal 분위수 선택 |
 | 계획 수요 | 리드 타임 수요 + 안전재고 |
 | 권장 발주량 | `max(0, 계획 수요 - (현재고 + 입고 예정))` |
 | 재고 위험도 | 가용 재고가 forecast·계획 수요를 충족하는지에 따라 낮음/보통/높음 |
@@ -72,7 +73,7 @@ flowchart LR
 | 분류 | 각 fold의 학습 이력에서 ADI·CV²를 계산해 Smooth·Erratic·Intermittent·Lumpy를 분류 |
 | 후보 모델 | Seasonal naive, Croston/SBA, Seasonal Croston/SBA, TSB, Prophet |
 | 검증 | 미래 6개월을 순차적으로 숨기는 3회 rolling-origin 평가 |
-| 평가 | WAPE, MAE, SKU·fold별 MASE와 품목별 holdout 오차 |
+| 평가 | WAPE, MAE, SKU·fold별 MASE, split-conformal 80%·90% coverage와 평균 구간 폭 |
 | 제품화 | FastAPI 분석 API, Next.js 대시보드, Vercel·Render 배포 |
 
 ## 시스템 구성
@@ -145,7 +146,7 @@ PYTHONPATH=. venv/bin/python backend/prepare_public_demo_data.py
 - 패턴별 WAPE는 품목군 수준의 결과입니다. 개별 품목의 성능은 대시보드 holdout 화면에서 확인해야 합니다.
 - `data/public/commax_evaluation.json`에는 schema version, 원본·공개 데이터 fingerprint, code revision, item/champion manifest, SKU×fold×model metric이 기록됩니다. 원본 CSV 자체는 포함하지 않습니다.
 - 실제 재고·입고 예정·공급 리드 타임 데이터가 없으므로 재고 계획은 **입력값 기반 시뮬레이터**입니다. 실제 재고 운영 성과나 품절 확률을 주장하지 않습니다.
-- 실제 운영 전에는 품절, 판촉 계획, 리드 타임, 예측 구간 coverage, 과소·과대 예측 비용을 함께 검증해야 합니다.
+- 예측 구간은 각 target origin보다 앞선 3개 origin의 절대오차를 사용한 split conformal 보정값입니다. 표본이 origin당 18개로 작고 수요 시계열은 비정상적일 수 있으므로, 실제 운영 전에는 기간·품목을 늘려 coverage와 과소·과대 예측 비용을 함께 검증해야 합니다.
 
 ## 기술 스택
 

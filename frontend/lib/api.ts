@@ -64,6 +64,14 @@ export interface CommaxEvaluationResponse {
     folds: number;
     selection_cutoff: string;
     models: Record<string, MetricSummary>;
+    interval_metrics: Record<string, Record<string, {
+        nominal_coverage: number;
+        empirical_coverage: number;
+        mean_interval_width: number;
+        evaluation_points: number;
+        calibration_residuals_min: number;
+        calibration_residuals_max: number;
+    }>>;
     pattern_results: Array<{
         pattern: string;
         items: number;
@@ -81,6 +89,8 @@ export interface CommaxBacktestResponse {
     item_code: string; pattern: string; champion: string; benchmark_wape: number; holdout_wape: number;
     interval_level: number;
     interval_coverage: number;
+    interval_method: "split_conformal_absolute_residuals";
+    calibration_residuals: number;
     demand_variability_risk: "low" | "medium" | "high";
     risk_message: string;
     planning_upper_total: number;
@@ -152,7 +162,7 @@ export const api = {
 
     getCommaxItems: async (): Promise<CommaxItem[]> => (await axios.get(`${API_BASE_URL}/commax/items`, { timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
     getCommaxForecast: async (itemCode: string, horizonMonths: number): Promise<CommaxForecastResponse> => (await axios.get(`${API_BASE_URL}/commax/forecast`, { params: { item_code: itemCode, horizon_months: horizonMonths }, timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
-    getCommaxBacktest: async (itemCode: string, horizonMonths: number): Promise<CommaxBacktestResponse> => (await axios.get(`${API_BASE_URL}/commax/backtest`, { params: { item_code: itemCode, horizon_months: horizonMonths }, timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
+    getCommaxBacktest: async (itemCode: string, horizonMonths: number, intervalLevel = 0.8): Promise<CommaxBacktestResponse> => (await axios.get(`${API_BASE_URL}/commax/backtest`, { params: { item_code: itemCode, horizon_months: horizonMonths, interval_level: intervalLevel }, timeout: COMMAX_REQUEST_TIMEOUT_MS })).data,
     getCommaxInventoryPlan: async (itemCode: string, onHandInventory: number, incomingInventory: number, leadTimeMonths: number, serviceLevel: number): Promise<CommaxInventoryPlanResponse> => (await axios.get(`${API_BASE_URL}/commax/inventory-plan`, {
         params: {
             item_code: itemCode,

@@ -5,8 +5,10 @@ from pathlib import Path
 import pandas as pd
 
 from ...evaluate_commax import (
-    SEASONAL_PERIOD,
+    calibration_residuals,
     classify_demand_pattern,
+    conformal_bounds,
+    conformal_quantile,
     forecast_model,
 )
 
@@ -60,18 +62,12 @@ class CommaxForecastService:
     def _predict(self, item: pd.DataFrame, horizon_months: int, champion: str, future_dates: pd.Series):
         return forecast_model(champion, item, future_dates)
 
-    def _historical_absolute_errors(self, item: pd.DataFrame, horizon_months: int, champion: str) -> list[float]:
-        """Build an item-level error distribution without looking at the final holdout."""
-        errors: list[float] = []
-        first_origin = len(item) - (4 * horizon_months)
-        for origin in range(first_origin, len(item) - horizon_months, horizon_months):
-            train = item.iloc[:origin]
-            test = item.iloc[origin:origin + horizon_months]
-            if len(train) <= SEASONAL_PERIOD or len(test) != horizon_months:
-                continue
-            predictions = self._predict(train, horizon_months, champion, test["period"])
-            errors.extend(abs(float(actual) - max(0, float(prediction))) for actual, prediction in zip(test["value"], predictions))
-        return errors
+    def _historical_absolute_errors(
+        self, item: pd.DataFrame, horizon_months: int, champion: str, origin: int | None = None
+    ) -> list[float]:
+        """Calibrate with the three origins immediately preceding the target origin."""
+        target_origin = len(item) if origin is None else origin
+        return calibration_residuals(item, champion, target_origin, horizon_months).tolist()
 
     @staticmethod
     def _risk_level(forecast_total: float, upper_total: float) -> tuple[str, str]:
@@ -108,7 +104,7 @@ class CommaxForecastService:
             "predictions": [{"date": date.date().isoformat(), "forecast": round(max(0, float(prediction)), 0)} for date, prediction in zip(future_dates, predictions)],
         }
 
-    def backtest(self, item_code: str, horizon_months: int) -> dict:
+    def backtest(self, item_code: str, horizon_months: int, interval_level: float = 0.8) -> dict:
         df = self._data()
         item = df[df["품목코드"] == item_code].sort_values("period").reset_index(drop=True)
         if item.empty:
@@ -117,14 +113,16 @@ class CommaxForecastService:
         champion, pattern_result = self._champion_for_pattern(pattern)
         train, actual = item.iloc[:-horizon_months], item.iloc[-horizon_months:]
         predictions = self._predict(train, horizon_months, champion, actual["period"])
-        historical_errors = self._historical_absolute_errors(item, horizon_months, champion)
-        error_margin = float(pd.Series(historical_errors).quantile(0.8)) if historical_errors else 0.0
+        historical_errors = self._historical_absolute_errors(item, horizon_months, champion, origin=len(train))
+        if not historical_errors:
+            raise CommaxDataNotFoundError
+        lower_bounds, upper_bounds, _ = conformal_bounds(predictions, historical_errors, interval_level)
         rows = []
-        for (_, row), prediction in zip(actual.iterrows(), predictions):
+        for (_, row), prediction, lower_bound, upper_bound in zip(actual.iterrows(), predictions, lower_bounds, upper_bounds):
             predicted = max(0, round(float(prediction), 0))
             actual_value = float(row["value"])
-            lower_bound = max(0, round(predicted - error_margin, 0))
-            upper_bound = round(predicted + error_margin, 0)
+            lower_bound = max(0, round(float(lower_bound), 0))
+            upper_bound = round(float(upper_bound), 0)
             rows.append({
                 "date": row["period"].date().isoformat(),
                 "actual": actual_value,
@@ -145,7 +143,9 @@ class CommaxForecastService:
             "champion": champion,
             "benchmark_wape": pattern_result["models"][champion]["wape"],
             "holdout_wape": round(wape, 2),
-            "interval_level": 80,
+            "interval_method": "split_conformal_absolute_residuals",
+            "calibration_residuals": len(historical_errors),
+            "interval_level": round(interval_level * 100),
             "interval_coverage": round(coverage, 1),
             "demand_variability_risk": risk_level,
             "risk_message": risk_message,
@@ -176,7 +176,7 @@ class CommaxForecastService:
         )
         predictions = [max(0, float(value)) for value in self._predict(item, lead_time_months, champion, pd.Series(future_dates))]
         historical_errors = self._historical_absolute_errors(item, lead_time_months, champion)
-        safety_stock_per_month = float(pd.Series(historical_errors).quantile(service_level)) if historical_errors else 0.0
+        safety_stock_per_month = conformal_quantile(historical_errors, service_level) if historical_errors else 0.0
         forecast_demand = sum(predictions)
         safety_stock = safety_stock_per_month * lead_time_months
         planning_demand = forecast_demand + safety_stock

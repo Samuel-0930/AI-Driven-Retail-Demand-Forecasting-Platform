@@ -6,7 +6,10 @@ import pytest
 
 from backend.evaluate_commax import (
     aggregate,
+    calibration_residuals,
     classify_demand_pattern,
+    conformal_bounds,
+    conformal_quantile,
     forecast_model,
     metrics,
     evaluate_commax,
@@ -66,6 +69,38 @@ def test_prophet_forecast_requests_month_start_periods():
     np.testing.assert_array_equal(result, np.array([13.0, 14.0]))
 
 
+def test_split_conformal_uses_the_finite_sample_higher_quantile():
+    residuals = [1.0, 2.0, 3.0, 4.0, 5.0]
+
+    assert conformal_quantile(residuals, 0.8) == 5.0
+    lower, upper, radius = conformal_bounds([10.0], residuals, 0.8)
+
+    assert radius == 5.0
+    np.testing.assert_array_equal(lower, np.array([5.0]))
+    np.testing.assert_array_equal(upper, np.array([15.0]))
+
+
+def test_calibration_residuals_do_not_read_the_target_or_future_periods(monkeypatch):
+    item = pd.DataFrame(
+        {
+            "period": pd.date_range("2020-01-01", periods=26, freq="MS"),
+            "value": np.arange(26, dtype=float),
+        }
+    )
+    monkeypatch.setattr(
+        "backend.evaluate_commax.forecast_model",
+        lambda _name, _train, future_dates: np.zeros(len(future_dates)),
+    )
+    baseline = calibration_residuals(item, "croston_sba", origin=20, horizon_months=2)
+    changed_future = item.copy()
+    changed_future.loc[20:, "value"] = 1_000_000
+
+    np.testing.assert_array_equal(
+        baseline,
+        calibration_residuals(changed_future, "croston_sba", origin=20, horizon_months=2),
+    )
+
+
 def test_evaluation_uses_fold_local_patterns_and_returns_auditable_rows(tmp_path, monkeypatch):
     periods = pd.date_range("2022-01-01", periods=20, freq="MS")
     values = [1.0] * 16 + [100.0, 1.0, 100.0, 1.0]
@@ -92,3 +127,8 @@ def test_evaluation_uses_fold_local_patterns_and_returns_auditable_rows(tmp_path
     assert len(result["fold_metrics"]) == 2
     assert result["fold_metrics"][0]["models"]["croston_sba"]["mase"] is None
     assert result["fold_metrics"][1]["models"]["croston_sba"]["mase"] is not None
+    interval = result["interval_metrics"]["croston_sba"]
+    assert set(interval) == {"80", "90"}
+    assert interval["80"]["evaluation_points"] == 4
+    assert 0 <= interval["90"]["empirical_coverage"] <= 100
+    assert interval["90"]["mean_interval_width"] >= interval["80"]["mean_interval_width"]

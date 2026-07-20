@@ -62,9 +62,13 @@ def get_commax_forecast(item_code: str, horizon_months: int = Query(default=6, g
 
 
 @router.get("/commax/backtest")
-def get_commax_backtest(item_code: str, horizon_months: int = Query(default=6, ge=1, le=12)):
+def get_commax_backtest(
+    item_code: str,
+    horizon_months: int = Query(default=6, ge=1, le=12),
+    interval_level: float = Query(default=0.8, gt=0, lt=1),
+):
     try:
-        return commax_service.backtest(item_code, horizon_months)
+        return commax_service.backtest(item_code, horizon_months, interval_level)
     except CommaxItemNotFoundError:
         raise HTTPException(status_code=404, detail="Commax item was not found.")
     except CommaxDataNotFoundError:
