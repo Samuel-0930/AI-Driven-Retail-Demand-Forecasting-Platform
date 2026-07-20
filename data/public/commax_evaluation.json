@@ -1,15 +1,15 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-07-20T12:47:43.442612+00:00",
+  "generated_at": "2026-07-20T12:55:43.638262+00:00",
   "dataset_fingerprint": "ca6d9020f489493936ca9b74c19696e8156e30e8dff64a7381851edb137365b8",
-  "code_revision": "2614e7d8457e5a974a1b21191f782991a07c34fe",
-  "evaluation_code_fingerprint": "58c6109cd017cc25067ad0a611396fe06971b72fef68f1b2fe63b7d18964972b",
+  "code_revision": "abfb8851d553a27e2b7303747c9a0dfc9bc7d9f8",
+  "evaluation_code_fingerprint": "e5eb88f4a009a42b6e15855145d9a1725803a62c6381b67426ac6be0a58f1cda",
   "evaluation_code_dirty": false,
   "dataset_type": "commax_monthly_shipments",
   "scope": "Top 20 items by cumulative shipments before the first evaluation holdout",
   "selection_cutoff": "2024-03-01",
   "period": "2015-01-01 to 2025-08-01",
-  "evaluation_method": "Three rolling 6-month origins. Demand patterns are recalculated from each fold's training history; Prophet uses month-start future periods.",
+  "evaluation_method": "Three rolling 6-month origins. Demand patterns are recalculated from each fold's training history; Prophet uses month-start future periods. Prediction intervals use split conformal absolute residuals from the three preceding origins only.",
   "items": 20,
   "item_codes": [
     "SDC000036AXX",
@@ -178,6 +178,98 @@
       "mase": 0.999,
       "mase_valid_rows": 60,
       "mase_excluded_rows": 0
+    }
+  },
+  "interval_metrics": {
+    "seasonal_naive": {
+      "80": {
+        "nominal_coverage": 80,
+        "empirical_coverage": 86.67,
+        "mean_interval_width": 2644.78,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      },
+      "90": {
+        "nominal_coverage": 90,
+        "empirical_coverage": 96.11,
+        "mean_interval_width": 3592.97,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      }
+    },
+    "croston_sba": {
+      "80": {
+        "nominal_coverage": 80,
+        "empirical_coverage": 91.94,
+        "mean_interval_width": 2278.5,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      },
+      "90": {
+        "nominal_coverage": 90,
+        "empirical_coverage": 97.78,
+        "mean_interval_width": 3046.28,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      }
+    },
+    "seasonal_croston_sba": {
+      "80": {
+        "nominal_coverage": 80,
+        "empirical_coverage": 89.72,
+        "mean_interval_width": 2235.18,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      },
+      "90": {
+        "nominal_coverage": 90,
+        "empirical_coverage": 97.22,
+        "mean_interval_width": 2957.72,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      }
+    },
+    "tsb": {
+      "80": {
+        "nominal_coverage": 80,
+        "empirical_coverage": 91.39,
+        "mean_interval_width": 2172.58,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      },
+      "90": {
+        "nominal_coverage": 90,
+        "empirical_coverage": 97.78,
+        "mean_interval_width": 2990.55,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      }
+    },
+    "prophet": {
+      "80": {
+        "nominal_coverage": 80,
+        "empirical_coverage": 85.0,
+        "mean_interval_width": 2860.38,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      },
+      "90": {
+        "nominal_coverage": 90,
+        "empirical_coverage": 94.17,
+        "mean_interval_width": 3763.68,
+        "evaluation_points": 360,
+        "calibration_residuals_min": 18,
+        "calibration_residuals_max": 18
+      }
     }
   },
   "pattern_results": [
