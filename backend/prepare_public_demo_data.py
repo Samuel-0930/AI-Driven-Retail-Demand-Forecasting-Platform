@@ -61,7 +61,8 @@ def main() -> None:
         "item code, item name, demand pattern, month, and shipment value.\n\n"
         "The original source CSV and its additional fields are intentionally excluded. "
         "`commax_evaluation.json` is the schema-versioned three-fold, six-month rolling validation result used by the dashboard. "
-        "Demand patterns are recalculated using only each fold's training history.\n",
+        "Demand patterns are recalculated using only each fold's training history. "
+        "Its 80% and 90% prediction intervals use split conformal absolute residuals from only the three origins preceding each evaluated origin.\n",
         encoding="utf-8",
     )
     print(f"Saved {len(public_frame):,} rows to {PUBLIC_DATA_PATH}")
