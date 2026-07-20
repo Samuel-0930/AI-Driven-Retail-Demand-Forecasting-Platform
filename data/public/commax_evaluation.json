@@ -1,67 +1,225 @@
 {
+  "schema_version": 2,
+  "generated_at": "2026-07-20T12:47:43.442612+00:00",
+  "dataset_fingerprint": "ca6d9020f489493936ca9b74c19696e8156e30e8dff64a7381851edb137365b8",
+  "code_revision": "2614e7d8457e5a974a1b21191f782991a07c34fe",
+  "evaluation_code_fingerprint": "58c6109cd017cc25067ad0a611396fe06971b72fef68f1b2fe63b7d18964972b",
+  "evaluation_code_dirty": false,
   "dataset_type": "commax_monthly_shipments",
-  "scope": "Top 20 items by cumulative shipments",
+  "scope": "Top 20 items by cumulative shipments before the first evaluation holdout",
+  "selection_cutoff": "2024-03-01",
   "period": "2015-01-01 to 2025-08-01",
-  "evaluation_method": "Three rolling 6-month origins. Prophet has no external variables; seasonal-naive repeats prior-year month; Croston/SBA and TSB tune parameters using training history only.",
+  "evaluation_method": "Three rolling 6-month origins. Demand patterns are recalculated from each fold's training history; Prophet uses month-start future periods.",
   "items": 20,
+  "item_codes": [
+    "SDC000036AXX",
+    "EM4605230AXX",
+    "ETZ000024CXX",
+    "UV9000731A",
+    "DCC000156AXX",
+    "PAS000040AXX",
+    "HAD000026AXC",
+    "DCC000136AXX",
+    "PAS000019AXX",
+    "TPM000008AXC",
+    "DRE000044AXX",
+    "ETZ000208AXX",
+    "DLX000006FXX",
+    "SDC000002AXX",
+    "SDP000004BXC",
+    "SDR000008BXC",
+    "SET-000063-XXXA",
+    "TPC000007AXC",
+    "SDR000007BXC",
+    "TPE000022AXC"
+  ],
+  "item_manifest": [
+    {
+      "item_code": "SDC000036AXX",
+      "item_name": "S. DRC-4Y 내수 (C) /65",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "EM4605230AXX",
+      "item_name": "CARD RF/ID MINI 13.56MHz 몰딩",
+      "serving_pattern": "Smooth"
+    },
+    {
+      "item_code": "ETZ000024CXX",
+      "item_name": "열선감지기 CPA-0212(N) 돔형 공사용",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "UV9000731A",
+      "item_name": "CARD RF/ID 13.56MHz",
+      "serving_pattern": "Smooth"
+    },
+    {
+      "item_code": "DCC000156AXX",
+      "item_name": "DRC-4Y 내수 (C)",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "PAS000040AXX",
+      "item_name": "SP-230CO 내수",
+      "serving_pattern": "Erratic"
+    },
+    {
+      "item_code": "HAD000026AXC",
+      "item_name": "AP-3SG(N2) 내수 (C)",
+      "serving_pattern": "Erratic"
+    },
+    {
+      "item_code": "DCC000136AXX",
+      "item_name": "DRC-4M(A) 내수",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "PAS000019AXX",
+      "item_name": "SP-235PO 내수 OEM",
+      "serving_pattern": "Smooth"
+    },
+    {
+      "item_code": "TPM000008AXC",
+      "item_name": "TP-S공 내수 (C)",
+      "serving_pattern": "Smooth"
+    },
+    {
+      "item_code": "DRE000044AXX",
+      "item_name": "DR-3L 내수",
+      "serving_pattern": "Erratic"
+    },
+    {
+      "item_code": "ETZ000208AXX",
+      "item_name": "CARD RF/ID 13.56MHz 주문",
+      "serving_pattern": "Erratic"
+    },
+    {
+      "item_code": "DLX000006FXX",
+      "item_name": "MODULE 447MHz CDL-3PR KISA",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "SDC000002AXX",
+      "item_name": "S. DRC-40K 수출 /65",
+      "serving_pattern": "Erratic"
+    },
+    {
+      "item_code": "SDP000004BXC",
+      "item_name": "S. DP-2S 내수 (C) /DR-2L",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "SDR000008BXC",
+      "item_name": "S. DR-2L 내수 (C) /NO MANUAL",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "SET-000063-XXXA",
+      "item_name": "DP-2S 내수 (C) /MANUAL + DR-2L 내수 (C)",
+      "serving_pattern": "Intermittent"
+    },
+    {
+      "item_code": "TPC000007AXC",
+      "item_name": "TP-12RC 수출 (C)",
+      "serving_pattern": "Smooth"
+    },
+    {
+      "item_code": "SDR000007BXC",
+      "item_name": "S. DR-2K 수출 (C) /PAD3",
+      "serving_pattern": "Erratic"
+    },
+    {
+      "item_code": "TPE000022AXC",
+      "item_name": "TP-SFN 내수 (C)",
+      "serving_pattern": "Intermittent"
+    }
+  ],
+  "champion_manifest": {
+    "Erratic": "seasonal_croston_sba",
+    "Intermittent": "croston_sba",
+    "Smooth": "croston_sba",
+    "global_fallback": "croston_sba"
+  },
   "horizon_months": 6,
   "folds": 3,
   "models": {
     "seasonal_naive": {
       "mae": 727.95,
       "wape": 58.35,
-      "mase": 0.785
+      "mase": 0.834,
+      "mase_valid_rows": 60,
+      "mase_excluded_rows": 0
     },
     "croston_sba": {
       "mae": 530.56,
       "wape": 42.53,
-      "mase": 0.572
+      "mase": 0.613,
+      "mase_valid_rows": 60,
+      "mase_excluded_rows": 0
     },
     "seasonal_croston_sba": {
       "mae": 573.43,
       "wape": 45.96,
-      "mase": 0.618
+      "mase": 0.663,
+      "mase_valid_rows": 60,
+      "mase_excluded_rows": 0
     },
     "tsb": {
       "mae": 551.76,
       "wape": 44.23,
-      "mase": 0.595
+      "mase": 0.641,
+      "mase_valid_rows": 60,
+      "mase_excluded_rows": 0
     },
     "prophet": {
-      "mae": 886.18,
-      "wape": 71.03,
-      "mase": 0.956
+      "mae": 921.31,
+      "wape": 73.85,
+      "mase": 0.999,
+      "mase_valid_rows": 60,
+      "mase_excluded_rows": 0
     }
   },
   "pattern_results": [
     {
       "pattern": "Erratic",
       "items": 6,
+      "evaluation_rows": 18,
       "models": {
         "seasonal_naive": {
           "mae": 481.85,
           "wape": 96.15,
-          "mase": 0.555
+          "mase": 0.524,
+          "mase_valid_rows": 18,
+          "mase_excluded_rows": 0
         },
         "croston_sba": {
           "mae": 375.82,
           "wape": 74.99,
-          "mase": 0.433
+          "mase": 0.395,
+          "mase_valid_rows": 18,
+          "mase_excluded_rows": 0
         },
         "seasonal_croston_sba": {
           "mae": 356.12,
           "wape": 71.06,
-          "mase": 0.41
+          "mase": 0.377,
+          "mase_valid_rows": 18,
+          "mase_excluded_rows": 0
         },
         "tsb": {
           "mae": 387.95,
           "wape": 77.41,
-          "mase": 0.447
+          "mase": 0.411,
+          "mase_valid_rows": 18,
+          "mase_excluded_rows": 0
         },
         "prophet": {
-          "mae": 996.3,
-          "wape": 198.81,
-          "mase": 1.147
+          "mae": 474.62,
+          "wape": 94.71,
+          "mase": 0.534,
+          "mase_valid_rows": 18,
+          "mase_excluded_rows": 0
         }
       },
       "champion": "seasonal_croston_sba"
@@ -69,31 +227,42 @@
     {
       "pattern": "Intermittent",
       "items": 9,
+      "evaluation_rows": 27,
       "models": {
         "seasonal_naive": {
           "mae": 943.39,
           "wape": 51.71,
-          "mase": 0.903
+          "mase": 1.066,
+          "mase_valid_rows": 27,
+          "mase_excluded_rows": 0
         },
         "croston_sba": {
           "mae": 711.68,
           "wape": 39.01,
-          "mase": 0.681
+          "mase": 0.831,
+          "mase_valid_rows": 27,
+          "mase_excluded_rows": 0
         },
         "seasonal_croston_sba": {
           "mae": 801.83,
           "wape": 43.95,
-          "mase": 0.768
+          "mase": 0.931,
+          "mase_valid_rows": 27,
+          "mase_excluded_rows": 0
         },
         "tsb": {
           "mae": 739.7,
           "wape": 40.54,
-          "mase": 0.708
+          "mase": 0.866,
+          "mase_valid_rows": 27,
+          "mase_excluded_rows": 0
         },
         "prophet": {
-          "mae": 1061.56,
-          "wape": 58.18,
-          "mase": 1.016
+          "mae": 1454.87,
+          "wape": 79.74,
+          "mase": 1.525,
+          "mase_valid_rows": 27,
+          "mase_excluded_rows": 0
         }
       },
       "champion": "croston_sba"
@@ -101,34 +270,2210 @@
     {
       "pattern": "Smooth",
       "items": 5,
+      "evaluation_rows": 15,
       "models": {
         "seasonal_naive": {
           "mae": 635.48,
           "wape": 57.51,
-          "mase": 0.805
+          "mase": 0.791,
+          "mase_valid_rows": 15,
+          "mase_excluded_rows": 0
         },
         "croston_sba": {
           "mae": 390.24,
           "wape": 35.32,
-          "mase": 0.494
+          "mase": 0.482,
+          "mase_valid_rows": 15,
+          "mase_excluded_rows": 0
         },
         "seasonal_croston_sba": {
           "mae": 423.05,
           "wape": 38.29,
-          "mase": 0.536
+          "mase": 0.525,
+          "mase_valid_rows": 15,
+          "mase_excluded_rows": 0
         },
         "tsb": {
           "mae": 410.07,
           "wape": 37.11,
-          "mase": 0.519
+          "mase": 0.512,
+          "mase_valid_rows": 15,
+          "mase_excluded_rows": 0
         },
         "prophet": {
-          "mae": 438.36,
-          "wape": 39.67,
-          "mase": 0.555
+          "mae": 496.93,
+          "wape": 44.97,
+          "mase": 0.609,
+          "mase_valid_rows": 15,
+          "mase_excluded_rows": 0
         }
       },
       "champion": "croston_sba"
     }
-  ]
+  ],
+  "fold_metrics": [
+    {
+      "item_code": "SDC000036AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 879.5,
+          "wape": 17.05,
+          "mase": 0.372
+        },
+        "croston_sba": {
+          "mae": 905.95,
+          "wape": 17.56,
+          "mase": 0.383
+        },
+        "seasonal_croston_sba": {
+          "mae": 1050.18,
+          "wape": 20.36,
+          "mase": 0.444
+        },
+        "tsb": {
+          "mae": 1380.42,
+          "wape": 26.76,
+          "mase": 0.584
+        },
+        "prophet": {
+          "mae": 3893.05,
+          "wape": 75.47,
+          "mase": 1.646
+        }
+      }
+    },
+    {
+      "item_code": "SDC000036AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 2520.33,
+          "wape": 54.73,
+          "mase": 1.106
+        },
+        "croston_sba": {
+          "mae": 553.61,
+          "wape": 12.02,
+          "mase": 0.243
+        },
+        "seasonal_croston_sba": {
+          "mae": 1204.43,
+          "wape": 26.15,
+          "mase": 0.529
+        },
+        "tsb": {
+          "mae": 471.94,
+          "wape": 10.25,
+          "mase": 0.207
+        },
+        "prophet": {
+          "mae": 5314.49,
+          "wape": 115.4,
+          "mase": 2.332
+        }
+      }
+    },
+    {
+      "item_code": "SDC000036AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1350.0,
+          "wape": 30.46,
+          "mase": 0.589
+        },
+        "croston_sba": {
+          "mae": 1497.86,
+          "wape": 33.8,
+          "mase": 0.654
+        },
+        "seasonal_croston_sba": {
+          "mae": 1766.27,
+          "wape": 39.85,
+          "mase": 0.771
+        },
+        "tsb": {
+          "mae": 1235.4,
+          "wape": 27.87,
+          "mase": 0.539
+        },
+        "prophet": {
+          "mae": 2067.58,
+          "wape": 46.65,
+          "mase": 0.902
+        }
+      }
+    },
+    {
+      "item_code": "EM4605230AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 936.33,
+          "wape": 51.49,
+          "mase": 0.799
+        },
+        "croston_sba": {
+          "mae": 665.17,
+          "wape": 36.58,
+          "mase": 0.568
+        },
+        "seasonal_croston_sba": {
+          "mae": 811.1,
+          "wape": 44.6,
+          "mase": 0.692
+        },
+        "tsb": {
+          "mae": 665.17,
+          "wape": 36.58,
+          "mase": 0.568
+        },
+        "prophet": {
+          "mae": 1018.21,
+          "wape": 55.99,
+          "mase": 0.869
+        }
+      }
+    },
+    {
+      "item_code": "EM4605230AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1054.83,
+          "wape": 57.82,
+          "mase": 0.911
+        },
+        "croston_sba": {
+          "mae": 602.41,
+          "wape": 33.02,
+          "mase": 0.52
+        },
+        "seasonal_croston_sba": {
+          "mae": 555.24,
+          "wape": 30.44,
+          "mase": 0.48
+        },
+        "tsb": {
+          "mae": 569.67,
+          "wape": 31.23,
+          "mase": 0.492
+        },
+        "prophet": {
+          "mae": 568.81,
+          "wape": 31.18,
+          "mase": 0.491
+        }
+      }
+    },
+    {
+      "item_code": "EM4605230AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 920.17,
+          "wape": 69.6,
+          "mase": 0.799
+        },
+        "croston_sba": {
+          "mae": 738.67,
+          "wape": 55.87,
+          "mase": 0.641
+        },
+        "seasonal_croston_sba": {
+          "mae": 724.71,
+          "wape": 54.82,
+          "mase": 0.629
+        },
+        "tsb": {
+          "mae": 738.67,
+          "wape": 55.87,
+          "mase": 0.641
+        },
+        "prophet": {
+          "mae": 824.61,
+          "wape": 62.38,
+          "mase": 0.716
+        }
+      }
+    },
+    {
+      "item_code": "ETZ000024CXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1234.33,
+          "wape": 29.81,
+          "mase": 1.04
+        },
+        "croston_sba": {
+          "mae": 1613.92,
+          "wape": 38.98,
+          "mase": 1.36
+        },
+        "seasonal_croston_sba": {
+          "mae": 1636.05,
+          "wape": 39.51,
+          "mase": 1.378
+        },
+        "tsb": {
+          "mae": 1281.83,
+          "wape": 30.96,
+          "mase": 1.08
+        },
+        "prophet": {
+          "mae": 1628.7,
+          "wape": 39.33,
+          "mase": 1.372
+        }
+      }
+    },
+    {
+      "item_code": "ETZ000024CXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 2046.67,
+          "wape": 160.25,
+          "mase": 1.72
+        },
+        "croston_sba": {
+          "mae": 2282.24,
+          "wape": 178.7,
+          "mase": 1.918
+        },
+        "seasonal_croston_sba": {
+          "mae": 2177.62,
+          "wape": 170.5,
+          "mase": 1.83
+        },
+        "tsb": {
+          "mae": 2624.09,
+          "wape": 205.46,
+          "mase": 2.205
+        },
+        "prophet": {
+          "mae": 3260.13,
+          "wape": 255.26,
+          "mase": 2.74
+        }
+      }
+    },
+    {
+      "item_code": "ETZ000024CXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 3206.5,
+          "wape": 343.19,
+          "mase": 2.593
+        },
+        "croston_sba": {
+          "mae": 811.26,
+          "wape": 86.83,
+          "mase": 0.656
+        },
+        "seasonal_croston_sba": {
+          "mae": 804.9,
+          "wape": 86.15,
+          "mase": 0.651
+        },
+        "tsb": {
+          "mae": 880.19,
+          "wape": 94.21,
+          "mase": 0.712
+        },
+        "prophet": {
+          "mae": 3493.13,
+          "wape": 373.86,
+          "mase": 2.825
+        }
+      }
+    },
+    {
+      "item_code": "UV9000731A",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 837.5,
+          "wape": 40.17,
+          "mase": 0.852
+        },
+        "croston_sba": {
+          "mae": 492.83,
+          "wape": 23.64,
+          "mase": 0.501
+        },
+        "seasonal_croston_sba": {
+          "mae": 496.19,
+          "wape": 23.8,
+          "mase": 0.505
+        },
+        "tsb": {
+          "mae": 492.83,
+          "wape": 23.64,
+          "mase": 0.501
+        },
+        "prophet": {
+          "mae": 566.37,
+          "wape": 27.17,
+          "mase": 0.576
+        }
+      }
+    },
+    {
+      "item_code": "UV9000731A",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 933.17,
+          "wape": 57.88,
+          "mase": 0.957
+        },
+        "croston_sba": {
+          "mae": 688.48,
+          "wape": 42.71,
+          "mase": 0.706
+        },
+        "seasonal_croston_sba": {
+          "mae": 645.48,
+          "wape": 40.04,
+          "mase": 0.662
+        },
+        "tsb": {
+          "mae": 761.25,
+          "wape": 47.22,
+          "mase": 0.781
+        },
+        "prophet": {
+          "mae": 762.23,
+          "wape": 47.28,
+          "mase": 0.782
+        }
+      }
+    },
+    {
+      "item_code": "UV9000731A",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1124.5,
+          "wape": 88.71,
+          "mase": 1.156
+        },
+        "croston_sba": {
+          "mae": 561.0,
+          "wape": 44.25,
+          "mase": 0.577
+        },
+        "seasonal_croston_sba": {
+          "mae": 795.38,
+          "wape": 62.74,
+          "mase": 0.818
+        },
+        "tsb": {
+          "mae": 631.81,
+          "wape": 49.84,
+          "mase": 0.65
+        },
+        "prophet": {
+          "mae": 1274.97,
+          "wape": 100.58,
+          "mase": 1.311
+        }
+      }
+    },
+    {
+      "item_code": "DCC000156AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 481.67,
+          "wape": 20.87,
+          "mase": 0.545
+        },
+        "croston_sba": {
+          "mae": 362.09,
+          "wape": 15.69,
+          "mase": 0.409
+        },
+        "seasonal_croston_sba": {
+          "mae": 454.1,
+          "wape": 19.67,
+          "mase": 0.514
+        },
+        "tsb": {
+          "mae": 613.5,
+          "wape": 26.58,
+          "mase": 0.694
+        },
+        "prophet": {
+          "mae": 1239.05,
+          "wape": 53.68,
+          "mase": 1.401
+        }
+      }
+    },
+    {
+      "item_code": "DCC000156AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1137.83,
+          "wape": 36.68,
+          "mase": 1.321
+        },
+        "croston_sba": {
+          "mae": 1140.91,
+          "wape": 36.78,
+          "mase": 1.325
+        },
+        "seasonal_croston_sba": {
+          "mae": 950.11,
+          "wape": 30.63,
+          "mase": 1.103
+        },
+        "tsb": {
+          "mae": 918.3,
+          "wape": 29.6,
+          "mase": 1.067
+        },
+        "prophet": {
+          "mae": 989.54,
+          "wape": 31.9,
+          "mase": 1.149
+        }
+      }
+    },
+    {
+      "item_code": "DCC000156AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 490.17,
+          "wape": 23.42,
+          "mase": 0.559
+        },
+        "croston_sba": {
+          "mae": 581.79,
+          "wape": 27.8,
+          "mase": 0.664
+        },
+        "seasonal_croston_sba": {
+          "mae": 622.8,
+          "wape": 29.76,
+          "mase": 0.711
+        },
+        "tsb": {
+          "mae": 836.5,
+          "wape": 39.97,
+          "mase": 0.955
+        },
+        "prophet": {
+          "mae": 1348.67,
+          "wape": 64.44,
+          "mase": 1.539
+        }
+      }
+    },
+    {
+      "item_code": "PAS000040AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1103.67,
+          "wape": 218.98,
+          "mase": 1.064
+        },
+        "croston_sba": {
+          "mae": 703.08,
+          "wape": 139.5,
+          "mase": 0.678
+        },
+        "seasonal_croston_sba": {
+          "mae": 924.69,
+          "wape": 183.47,
+          "mase": 0.892
+        },
+        "tsb": {
+          "mae": 734.65,
+          "wape": 145.76,
+          "mase": 0.709
+        },
+        "prophet": {
+          "mae": 991.58,
+          "wape": 196.74,
+          "mase": 0.956
+        }
+      }
+    },
+    {
+      "item_code": "PAS000040AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 404.0,
+          "wape": 89.41,
+          "mase": 0.388
+        },
+        "croston_sba": {
+          "mae": 599.57,
+          "wape": 132.7,
+          "mase": 0.576
+        },
+        "seasonal_croston_sba": {
+          "mae": 459.53,
+          "wape": 101.7,
+          "mase": 0.442
+        },
+        "tsb": {
+          "mae": 617.37,
+          "wape": 136.64,
+          "mase": 0.593
+        },
+        "prophet": {
+          "mae": 471.2,
+          "wape": 104.29,
+          "mase": 0.453
+        }
+      }
+    },
+    {
+      "item_code": "PAS000040AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 697.5,
+          "wape": 82.76,
+          "mase": 0.693
+        },
+        "croston_sba": {
+          "mae": 607.91,
+          "wape": 72.13,
+          "mase": 0.604
+        },
+        "seasonal_croston_sba": {
+          "mae": 505.81,
+          "wape": 60.01,
+          "mase": 0.503
+        },
+        "tsb": {
+          "mae": 569.5,
+          "wape": 67.57,
+          "mase": 0.566
+        },
+        "prophet": {
+          "mae": 562.26,
+          "wape": 66.71,
+          "mase": 0.559
+        }
+      }
+    },
+    {
+      "item_code": "HAD000026AXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 287.0,
+          "wape": 100.29,
+          "mase": 0.358
+        },
+        "croston_sba": {
+          "mae": 69.22,
+          "wape": 24.19,
+          "mase": 0.086
+        },
+        "seasonal_croston_sba": {
+          "mae": 62.8,
+          "wape": 21.95,
+          "mase": 0.078
+        },
+        "tsb": {
+          "mae": 108.15,
+          "wape": 37.79,
+          "mase": 0.135
+        },
+        "prophet": {
+          "mae": 312.11,
+          "wape": 109.07,
+          "mase": 0.39
+        }
+      }
+    },
+    {
+      "item_code": "HAD000026AXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 120.83,
+          "wape": 37.12,
+          "mase": 0.157
+        },
+        "croston_sba": {
+          "mae": 98.1,
+          "wape": 30.14,
+          "mase": 0.127
+        },
+        "seasonal_croston_sba": {
+          "mae": 135.61,
+          "wape": 41.66,
+          "mase": 0.176
+        },
+        "tsb": {
+          "mae": 74.22,
+          "wape": 22.8,
+          "mase": 0.096
+        },
+        "prophet": {
+          "mae": 471.55,
+          "wape": 144.87,
+          "mase": 0.611
+        }
+      }
+    },
+    {
+      "item_code": "HAD000026AXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 69.83,
+          "wape": 26.42,
+          "mase": 0.095
+        },
+        "croston_sba": {
+          "mae": 99.59,
+          "wape": 37.68,
+          "mase": 0.135
+        },
+        "seasonal_croston_sba": {
+          "mae": 94.36,
+          "wape": 35.7,
+          "mase": 0.128
+        },
+        "tsb": {
+          "mae": 115.81,
+          "wape": 43.81,
+          "mase": 0.157
+        },
+        "prophet": {
+          "mae": 458.03,
+          "wape": 173.28,
+          "mase": 0.623
+        }
+      }
+    },
+    {
+      "item_code": "DCC000136AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 812.33,
+          "wape": 32.29,
+          "mase": 1.084
+        },
+        "croston_sba": {
+          "mae": 1362.06,
+          "wape": 54.15,
+          "mase": 1.818
+        },
+        "seasonal_croston_sba": {
+          "mae": 1289.12,
+          "wape": 51.25,
+          "mase": 1.721
+        },
+        "tsb": {
+          "mae": 1192.98,
+          "wape": 47.43,
+          "mase": 1.592
+        },
+        "prophet": {
+          "mae": 1075.3,
+          "wape": 42.75,
+          "mase": 1.435
+        }
+      }
+    },
+    {
+      "item_code": "DCC000136AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 609.33,
+          "wape": 49.99,
+          "mase": 0.809
+        },
+        "croston_sba": {
+          "mae": 552.6,
+          "wape": 45.34,
+          "mase": 0.734
+        },
+        "seasonal_croston_sba": {
+          "mae": 582.2,
+          "wape": 47.77,
+          "mase": 0.773
+        },
+        "tsb": {
+          "mae": 865.2,
+          "wape": 70.99,
+          "mase": 1.149
+        },
+        "prophet": {
+          "mae": 1917.99,
+          "wape": 157.36,
+          "mase": 2.548
+        }
+      }
+    },
+    {
+      "item_code": "DCC000136AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1707.83,
+          "wape": 154.6,
+          "mase": 2.292
+        },
+        "croston_sba": {
+          "mae": 295.28,
+          "wape": 26.73,
+          "mase": 0.396
+        },
+        "seasonal_croston_sba": {
+          "mae": 416.5,
+          "wape": 37.7,
+          "mase": 0.559
+        },
+        "tsb": {
+          "mae": 362.57,
+          "wape": 32.82,
+          "mase": 0.487
+        },
+        "prophet": {
+          "mae": 1397.04,
+          "wape": 126.47,
+          "mase": 1.875
+        }
+      }
+    },
+    {
+      "item_code": "PAS000019AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 709.0,
+          "wape": 57.26,
+          "mase": 0.994
+        },
+        "croston_sba": {
+          "mae": 446.9,
+          "wape": 36.09,
+          "mase": 0.627
+        },
+        "seasonal_croston_sba": {
+          "mae": 432.86,
+          "wape": 34.96,
+          "mase": 0.607
+        },
+        "tsb": {
+          "mae": 553.58,
+          "wape": 44.71,
+          "mase": 0.776
+        },
+        "prophet": {
+          "mae": 281.46,
+          "wape": 22.73,
+          "mase": 0.395
+        }
+      }
+    },
+    {
+      "item_code": "PAS000019AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 560.33,
+          "wape": 41.67,
+          "mase": 0.786
+        },
+        "croston_sba": {
+          "mae": 193.04,
+          "wape": 14.35,
+          "mase": 0.271
+        },
+        "seasonal_croston_sba": {
+          "mae": 251.98,
+          "wape": 18.74,
+          "mase": 0.353
+        },
+        "tsb": {
+          "mae": 171.35,
+          "wape": 12.74,
+          "mase": 0.24
+        },
+        "prophet": {
+          "mae": 290.38,
+          "wape": 21.59,
+          "mase": 0.407
+        }
+      }
+    },
+    {
+      "item_code": "PAS000019AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 484.83,
+          "wape": 34.44,
+          "mase": 0.688
+        },
+        "croston_sba": {
+          "mae": 281.07,
+          "wape": 19.97,
+          "mase": 0.399
+        },
+        "seasonal_croston_sba": {
+          "mae": 356.68,
+          "wape": 25.34,
+          "mase": 0.506
+        },
+        "tsb": {
+          "mae": 238.16,
+          "wape": 16.92,
+          "mase": 0.338
+        },
+        "prophet": {
+          "mae": 366.81,
+          "wape": 26.06,
+          "mase": 0.521
+        }
+      }
+    },
+    {
+      "item_code": "TPM000008AXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 343.17,
+          "wape": 60.2,
+          "mase": 0.558
+        },
+        "croston_sba": {
+          "mae": 100.88,
+          "wape": 17.7,
+          "mase": 0.164
+        },
+        "seasonal_croston_sba": {
+          "mae": 84.2,
+          "wape": 14.77,
+          "mase": 0.137
+        },
+        "tsb": {
+          "mae": 143.09,
+          "wape": 25.1,
+          "mase": 0.233
+        },
+        "prophet": {
+          "mae": 119.69,
+          "wape": 21.0,
+          "mase": 0.195
+        }
+      }
+    },
+    {
+      "item_code": "TPM000008AXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 250.67,
+          "wape": 56.33,
+          "mase": 0.418
+        },
+        "croston_sba": {
+          "mae": 111.7,
+          "wape": 25.1,
+          "mase": 0.186
+        },
+        "seasonal_croston_sba": {
+          "mae": 118.52,
+          "wape": 26.63,
+          "mase": 0.198
+        },
+        "tsb": {
+          "mae": 149.7,
+          "wape": 33.64,
+          "mase": 0.25
+        },
+        "prophet": {
+          "mae": 182.0,
+          "wape": 40.9,
+          "mase": 0.304
+        }
+      }
+    },
+    {
+      "item_code": "TPM000008AXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 332.67,
+          "wape": 110.89,
+          "mase": 0.573
+        },
+        "croston_sba": {
+          "mae": 257.47,
+          "wape": 85.82,
+          "mase": 0.444
+        },
+        "seasonal_croston_sba": {
+          "mae": 270.97,
+          "wape": 90.32,
+          "mase": 0.467
+        },
+        "tsb": {
+          "mae": 273.11,
+          "wape": 91.04,
+          "mase": 0.471
+        },
+        "prophet": {
+          "mae": 279.31,
+          "wape": 93.1,
+          "mase": 0.481
+        }
+      }
+    },
+    {
+      "item_code": "DRE000044AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 235.5,
+          "wape": 119.04,
+          "mase": 0.268
+        },
+        "croston_sba": {
+          "mae": 126.84,
+          "wape": 64.11,
+          "mase": 0.144
+        },
+        "seasonal_croston_sba": {
+          "mae": 94.24,
+          "wape": 47.63,
+          "mase": 0.107
+        },
+        "tsb": {
+          "mae": 184.14,
+          "wape": 93.08,
+          "mase": 0.21
+        },
+        "prophet": {
+          "mae": 242.99,
+          "wape": 122.83,
+          "mase": 0.277
+        }
+      }
+    },
+    {
+      "item_code": "DRE000044AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 359.0,
+          "wape": 71.35,
+          "mase": 0.427
+        },
+        "croston_sba": {
+          "mae": 390.17,
+          "wape": 77.54,
+          "mase": 0.464
+        },
+        "seasonal_croston_sba": {
+          "mae": 385.83,
+          "wape": 76.68,
+          "mase": 0.459
+        },
+        "tsb": {
+          "mae": 390.17,
+          "wape": 77.54,
+          "mase": 0.464
+        },
+        "prophet": {
+          "mae": 367.38,
+          "wape": 73.01,
+          "mase": 0.437
+        }
+      }
+    },
+    {
+      "item_code": "DRE000044AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 88.83,
+          "wape": 44.57,
+          "mase": 0.109
+        },
+        "croston_sba": {
+          "mae": 193.39,
+          "wape": 97.02,
+          "mase": 0.237
+        },
+        "seasonal_croston_sba": {
+          "mae": 169.86,
+          "wape": 85.21,
+          "mase": 0.209
+        },
+        "tsb": {
+          "mae": 256.65,
+          "wape": 128.75,
+          "mase": 0.315
+        },
+        "prophet": {
+          "mae": 295.98,
+          "wape": 148.48,
+          "mase": 0.363
+        }
+      }
+    },
+    {
+      "item_code": "ETZ000208AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 727.67,
+          "wape": 71.52,
+          "mase": 0.628
+        },
+        "croston_sba": {
+          "mae": 756.83,
+          "wape": 74.38,
+          "mase": 0.653
+        },
+        "seasonal_croston_sba": {
+          "mae": 550.89,
+          "wape": 54.14,
+          "mase": 0.475
+        },
+        "tsb": {
+          "mae": 756.83,
+          "wape": 74.38,
+          "mase": 0.653
+        },
+        "prophet": {
+          "mae": 668.64,
+          "wape": 65.71,
+          "mase": 0.577
+        }
+      }
+    },
+    {
+      "item_code": "ETZ000208AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1523.5,
+          "wape": 118.28,
+          "mase": 1.343
+        },
+        "croston_sba": {
+          "mae": 880.52,
+          "wape": 68.36,
+          "mase": 0.776
+        },
+        "seasonal_croston_sba": {
+          "mae": 965.7,
+          "wape": 74.98,
+          "mase": 0.851
+        },
+        "tsb": {
+          "mae": 850.65,
+          "wape": 66.04,
+          "mase": 0.75
+        },
+        "prophet": {
+          "mae": 886.35,
+          "wape": 68.82,
+          "mase": 0.781
+        }
+      }
+    },
+    {
+      "item_code": "ETZ000208AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 945.17,
+          "wape": 58.01,
+          "mase": 0.818
+        },
+        "croston_sba": {
+          "mae": 1062.67,
+          "wape": 65.22,
+          "mase": 0.92
+        },
+        "seasonal_croston_sba": {
+          "mae": 911.21,
+          "wape": 55.93,
+          "mase": 0.789
+        },
+        "tsb": {
+          "mae": 1062.67,
+          "wape": 65.22,
+          "mase": 0.92
+        },
+        "prophet": {
+          "mae": 990.12,
+          "wape": 60.77,
+          "mase": 0.857
+        }
+      }
+    },
+    {
+      "item_code": "DLX000006FXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 1556.33,
+          "wape": 52.25,
+          "mase": 2.333
+        },
+        "croston_sba": {
+          "mae": 1257.88,
+          "wape": 42.23,
+          "mase": 1.886
+        },
+        "seasonal_croston_sba": {
+          "mae": 1385.51,
+          "wape": 46.51,
+          "mase": 2.077
+        },
+        "tsb": {
+          "mae": 923.0,
+          "wape": 30.99,
+          "mase": 1.384
+        },
+        "prophet": {
+          "mae": 751.35,
+          "wape": 25.22,
+          "mase": 1.126
+        }
+      }
+    },
+    {
+      "item_code": "DLX000006FXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 616.5,
+          "wape": 23.81,
+          "mase": 0.858
+        },
+        "croston_sba": {
+          "mae": 580.48,
+          "wape": 22.42,
+          "mase": 0.808
+        },
+        "seasonal_croston_sba": {
+          "mae": 981.25,
+          "wape": 37.89,
+          "mase": 1.366
+        },
+        "tsb": {
+          "mae": 473.0,
+          "wape": 18.26,
+          "mase": 0.658
+        },
+        "prophet": {
+          "mae": 983.66,
+          "wape": 37.98,
+          "mase": 1.369
+        }
+      }
+    },
+    {
+      "item_code": "DLX000006FXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 890.17,
+          "wape": 40.24,
+          "mase": 1.249
+        },
+        "croston_sba": {
+          "mae": 588.67,
+          "wape": 26.61,
+          "mase": 0.826
+        },
+        "seasonal_croston_sba": {
+          "mae": 688.17,
+          "wape": 31.11,
+          "mase": 0.965
+        },
+        "tsb": {
+          "mae": 635.79,
+          "wape": 28.74,
+          "mase": 0.892
+        },
+        "prophet": {
+          "mae": 1184.17,
+          "wape": 53.53,
+          "mase": 1.661
+        }
+      }
+    },
+    {
+      "item_code": "SDC000002AXX",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 328.5,
+          "wape": 162.89,
+          "mase": 0.525
+        },
+        "croston_sba": {
+          "mae": 131.23,
+          "wape": 65.07,
+          "mase": 0.21
+        },
+        "seasonal_croston_sba": {
+          "mae": 142.35,
+          "wape": 70.59,
+          "mase": 0.228
+        },
+        "tsb": {
+          "mae": 138.65,
+          "wape": 68.75,
+          "mase": 0.222
+        },
+        "prophet": {
+          "mae": 327.39,
+          "wape": 162.34,
+          "mase": 0.523
+        }
+      }
+    },
+    {
+      "item_code": "SDC000002AXX",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 132.5,
+          "wape": 191.57,
+          "mase": 0.218
+        },
+        "croston_sba": {
+          "mae": 121.0,
+          "wape": 174.93,
+          "mase": 0.199
+        },
+        "seasonal_croston_sba": {
+          "mae": 105.1,
+          "wape": 151.95,
+          "mase": 0.173
+        },
+        "tsb": {
+          "mae": 141.92,
+          "wape": 205.18,
+          "mase": 0.233
+        },
+        "prophet": {
+          "mae": 260.44,
+          "wape": 376.55,
+          "mase": 0.428
+        }
+      }
+    },
+    {
+      "item_code": "SDC000002AXX",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 188.33,
+          "wape": 491.3,
+          "mase": 0.323
+        },
+        "croston_sba": {
+          "mae": 63.14,
+          "wape": 164.71,
+          "mase": 0.108
+        },
+        "seasonal_croston_sba": {
+          "mae": 76.72,
+          "wape": 200.15,
+          "mase": 0.132
+        },
+        "tsb": {
+          "mae": 66.21,
+          "wape": 172.71,
+          "mase": 0.114
+        },
+        "prophet": {
+          "mae": 223.92,
+          "wape": 584.13,
+          "mase": 0.384
+        }
+      }
+    },
+    {
+      "item_code": "SDP000004BXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 549.83,
+          "wape": 113.25,
+          "mase": 0.987
+        },
+        "croston_sba": {
+          "mae": 474.04,
+          "wape": 97.64,
+          "mase": 0.851
+        },
+        "seasonal_croston_sba": {
+          "mae": 514.8,
+          "wape": 106.03,
+          "mase": 0.924
+        },
+        "tsb": {
+          "mae": 665.89,
+          "wape": 137.16,
+          "mase": 1.195
+        },
+        "prophet": {
+          "mae": 1232.24,
+          "wape": 253.81,
+          "mase": 2.212
+        }
+      }
+    },
+    {
+      "item_code": "SDP000004BXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 672.0,
+          "wape": 85.61,
+          "mase": 1.207
+        },
+        "croston_sba": {
+          "mae": 370.95,
+          "wape": 47.26,
+          "mase": 0.666
+        },
+        "seasonal_croston_sba": {
+          "mae": 438.64,
+          "wape": 55.88,
+          "mase": 0.788
+        },
+        "tsb": {
+          "mae": 256.67,
+          "wape": 32.7,
+          "mase": 0.461
+        },
+        "prophet": {
+          "mae": 479.52,
+          "wape": 61.09,
+          "mase": 0.861
+        }
+      }
+    },
+    {
+      "item_code": "SDP000004BXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 242.0,
+          "wape": 54.0,
+          "mase": 0.43
+        },
+        "croston_sba": {
+          "mae": 311.49,
+          "wape": 69.5,
+          "mase": 0.553
+        },
+        "seasonal_croston_sba": {
+          "mae": 380.66,
+          "wape": 84.94,
+          "mase": 0.676
+        },
+        "tsb": {
+          "mae": 391.49,
+          "wape": 87.35,
+          "mase": 0.695
+        },
+        "prophet": {
+          "mae": 553.92,
+          "wape": 123.6,
+          "mase": 0.984
+        }
+      }
+    },
+    {
+      "item_code": "SDR000008BXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 549.83,
+          "wape": 113.25,
+          "mase": 0.987
+        },
+        "croston_sba": {
+          "mae": 474.04,
+          "wape": 97.64,
+          "mase": 0.851
+        },
+        "seasonal_croston_sba": {
+          "mae": 514.8,
+          "wape": 106.03,
+          "mase": 0.924
+        },
+        "tsb": {
+          "mae": 665.89,
+          "wape": 137.16,
+          "mase": 1.195
+        },
+        "prophet": {
+          "mae": 1232.24,
+          "wape": 253.81,
+          "mase": 2.212
+        }
+      }
+    },
+    {
+      "item_code": "SDR000008BXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 672.5,
+          "wape": 85.72,
+          "mase": 1.208
+        },
+        "croston_sba": {
+          "mae": 371.45,
+          "wape": 47.35,
+          "mase": 0.667
+        },
+        "seasonal_croston_sba": {
+          "mae": 439.14,
+          "wape": 55.98,
+          "mase": 0.789
+        },
+        "tsb": {
+          "mae": 257.17,
+          "wape": 32.78,
+          "mase": 0.462
+        },
+        "prophet": {
+          "mae": 480.02,
+          "wape": 61.19,
+          "mase": 0.862
+        }
+      }
+    },
+    {
+      "item_code": "SDR000008BXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 242.0,
+          "wape": 54.0,
+          "mase": 0.43
+        },
+        "croston_sba": {
+          "mae": 311.36,
+          "wape": 69.47,
+          "mase": 0.553
+        },
+        "seasonal_croston_sba": {
+          "mae": 380.58,
+          "wape": 84.92,
+          "mase": 0.676
+        },
+        "tsb": {
+          "mae": 391.31,
+          "wape": 87.31,
+          "mase": 0.695
+        },
+        "prophet": {
+          "mae": 546.73,
+          "wape": 121.99,
+          "mase": 0.971
+        }
+      }
+    },
+    {
+      "item_code": "SET-000063-XXXA",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 549.83,
+          "wape": 113.25,
+          "mase": 0.992
+        },
+        "croston_sba": {
+          "mae": 447.8,
+          "wape": 92.24,
+          "mase": 0.808
+        },
+        "seasonal_croston_sba": {
+          "mae": 497.14,
+          "wape": 102.4,
+          "mase": 0.897
+        },
+        "tsb": {
+          "mae": 648.88,
+          "wape": 133.65,
+          "mase": 1.17
+        },
+        "prophet": {
+          "mae": 1229.31,
+          "wape": 253.21,
+          "mase": 2.217
+        }
+      }
+    },
+    {
+      "item_code": "SET-000063-XXXA",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 637.5,
+          "wape": 81.26,
+          "mase": 1.15
+        },
+        "croston_sba": {
+          "mae": 373.51,
+          "wape": 47.61,
+          "mase": 0.674
+        },
+        "seasonal_croston_sba": {
+          "mae": 442.19,
+          "wape": 56.37,
+          "mase": 0.798
+        },
+        "tsb": {
+          "mae": 257.17,
+          "wape": 32.78,
+          "mase": 0.464
+        },
+        "prophet": {
+          "mae": 554.37,
+          "wape": 70.67,
+          "mase": 1.0
+        }
+      }
+    },
+    {
+      "item_code": "SET-000063-XXXA",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 242.0,
+          "wape": 54.0,
+          "mase": 0.433
+        },
+        "croston_sba": {
+          "mae": 310.99,
+          "wape": 69.39,
+          "mase": 0.557
+        },
+        "seasonal_croston_sba": {
+          "mae": 381.6,
+          "wape": 85.15,
+          "mase": 0.683
+        },
+        "tsb": {
+          "mae": 386.51,
+          "wape": 86.24,
+          "mase": 0.692
+        },
+        "prophet": {
+          "mae": 522.05,
+          "wape": 116.49,
+          "mase": 0.934
+        }
+      }
+    },
+    {
+      "item_code": "TPC000007AXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 255.33,
+          "wape": 58.25,
+          "mase": 0.569
+        },
+        "croston_sba": {
+          "mae": 168.46,
+          "wape": 38.43,
+          "mase": 0.375
+        },
+        "seasonal_croston_sba": {
+          "mae": 255.58,
+          "wape": 58.31,
+          "mase": 0.569
+        },
+        "tsb": {
+          "mae": 200.46,
+          "wape": 45.73,
+          "mase": 0.447
+        },
+        "prophet": {
+          "mae": 311.26,
+          "wape": 71.01,
+          "mase": 0.693
+        }
+      }
+    },
+    {
+      "item_code": "TPC000007AXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 432.17,
+          "wape": 89.85,
+          "mase": 0.987
+        },
+        "croston_sba": {
+          "mae": 236.45,
+          "wape": 49.16,
+          "mase": 0.54
+        },
+        "seasonal_croston_sba": {
+          "mae": 251.58,
+          "wape": 52.3,
+          "mase": 0.575
+        },
+        "tsb": {
+          "mae": 252.98,
+          "wape": 52.59,
+          "mase": 0.578
+        },
+        "prophet": {
+          "mae": 311.41,
+          "wape": 64.74,
+          "mase": 0.711
+        }
+      }
+    },
+    {
+      "item_code": "TPC000007AXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Smooth",
+      "models": {
+        "seasonal_naive": {
+          "mae": 357.5,
+          "wape": 85.29,
+          "mase": 0.817
+        },
+        "croston_sba": {
+          "mae": 309.17,
+          "wape": 73.76,
+          "mase": 0.707
+        },
+        "seasonal_croston_sba": {
+          "mae": 295.32,
+          "wape": 70.45,
+          "mase": 0.675
+        },
+        "tsb": {
+          "mae": 309.17,
+          "wape": 73.76,
+          "mase": 0.707
+        },
+        "prophet": {
+          "mae": 296.41,
+          "wape": 70.71,
+          "mase": 0.678
+        }
+      }
+    },
+    {
+      "item_code": "SDR000007BXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 503.67,
+          "wape": 121.85,
+          "mase": 0.685
+        },
+        "croston_sba": {
+          "mae": 245.52,
+          "wape": 59.4,
+          "mase": 0.334
+        },
+        "seasonal_croston_sba": {
+          "mae": 235.8,
+          "wape": 57.05,
+          "mase": 0.321
+        },
+        "tsb": {
+          "mae": 293.31,
+          "wape": 70.96,
+          "mase": 0.399
+        },
+        "prophet": {
+          "mae": 389.1,
+          "wape": 94.14,
+          "mase": 0.529
+        }
+      }
+    },
+    {
+      "item_code": "SDR000007BXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 717.5,
+          "wape": 148.96,
+          "mase": 0.994
+        },
+        "croston_sba": {
+          "mae": 338.33,
+          "wape": 70.24,
+          "mase": 0.469
+        },
+        "seasonal_croston_sba": {
+          "mae": 325.23,
+          "wape": 67.52,
+          "mase": 0.451
+        },
+        "tsb": {
+          "mae": 365.79,
+          "wape": 75.94,
+          "mase": 0.507
+        },
+        "prophet": {
+          "mae": 349.43,
+          "wape": 72.55,
+          "mase": 0.484
+        }
+      }
+    },
+    {
+      "item_code": "SDR000007BXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Erratic",
+      "models": {
+        "seasonal_naive": {
+          "mae": 240.33,
+          "wape": 78.45,
+          "mase": 0.333
+        },
+        "croston_sba": {
+          "mae": 277.61,
+          "wape": 90.62,
+          "mase": 0.385
+        },
+        "seasonal_croston_sba": {
+          "mae": 264.49,
+          "wape": 86.34,
+          "mase": 0.367
+        },
+        "tsb": {
+          "mae": 256.33,
+          "wape": 83.68,
+          "mase": 0.355
+        },
+        "prophet": {
+          "mae": 274.74,
+          "wape": 89.69,
+          "mase": 0.381
+        }
+      }
+    },
+    {
+      "item_code": "TPE000022AXC",
+      "fold": 1,
+      "train_start": "2015-01-01",
+      "train_end": "2024-02-01",
+      "test_start": "2024-03-01",
+      "test_end": "2024-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 397.5,
+          "wape": 29.15,
+          "mase": 0.616
+        },
+        "croston_sba": {
+          "mae": 274.79,
+          "wape": 20.15,
+          "mase": 0.426
+        },
+        "seasonal_croston_sba": {
+          "mae": 410.11,
+          "wape": 30.07,
+          "mase": 0.635
+        },
+        "tsb": {
+          "mae": 222.17,
+          "wape": 16.29,
+          "mase": 0.344
+        },
+        "prophet": {
+          "mae": 342.02,
+          "wape": 25.08,
+          "mase": 0.53
+        }
+      }
+    },
+    {
+      "item_code": "TPE000022AXC",
+      "fold": 2,
+      "train_start": "2015-01-01",
+      "train_end": "2024-08-01",
+      "test_start": "2024-09-01",
+      "test_end": "2025-02-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 703.0,
+          "wape": 64.7,
+          "mase": 1.113
+        },
+        "croston_sba": {
+          "mae": 543.49,
+          "wape": 50.02,
+          "mase": 0.861
+        },
+        "seasonal_croston_sba": {
+          "mae": 581.98,
+          "wape": 53.56,
+          "mase": 0.922
+        },
+        "tsb": {
+          "mae": 613.61,
+          "wape": 56.48,
+          "mase": 0.972
+        },
+        "prophet": {
+          "mae": 766.87,
+          "wape": 70.58,
+          "mase": 1.215
+        }
+      }
+    },
+    {
+      "item_code": "TPE000022AXC",
+      "fold": 3,
+      "train_start": "2015-01-01",
+      "train_end": "2025-02-01",
+      "test_start": "2025-03-01",
+      "test_end": "2025-08-01",
+      "pattern_at_origin": "Intermittent",
+      "models": {
+        "seasonal_naive": {
+          "mae": 474.0,
+          "wape": 48.16,
+          "mase": 0.746
+        },
+        "croston_sba": {
+          "mae": 564.91,
+          "wape": 57.4,
+          "mase": 0.889
+        },
+        "seasonal_croston_sba": {
+          "mae": 658.64,
+          "wape": 66.92,
+          "mase": 1.037
+        },
+        "tsb": {
+          "mae": 520.34,
+          "wape": 52.87,
+          "mase": 0.819
+        },
+        "prophet": {
+          "mae": 798.33,
+          "wape": 81.12,
+          "mase": 1.257
+        }
+      }
+    }
+  ],
+  "skipped_pattern_rows": 0,
+  "public_data_fingerprint": "2f6d0b9480a720a428b139b68528b34692888d3098dc4fde9ce99957c9c71f77",
+  "public_rows": 2560
 }
