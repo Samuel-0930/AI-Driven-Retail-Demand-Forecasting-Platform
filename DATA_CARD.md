@@ -35,3 +35,9 @@
 이 분석 사례는 앱 데모의 Prophet 학습에 사용되지 않습니다. 원본 데이터가 저장소에 없으므로 노트북을 완전 재실행하려면 권한 있는 원본 파일 `Final_KR_modeling_long_with_external_data.csv`를 별도로 제공해야 합니다.
 
 EDA에서 확인한 수치는 [COMMAX_EDA_CASE_STUDY.md](COMMAX_EDA_CASE_STUDY.md)에 해석·주의점과 함께 정리했습니다.
+
+### 공개 benchmark 파생물
+
+`backend/evaluate_commax.py`는 원본의 품목 코드·이름·월·출하량만 사용해 평가 artifact를 생성합니다. 후보 품목은 첫 holdout 이전 누적 출하량으로 선택하고, 각 fold의 패턴은 해당 fold의 학습 이력만으로 ADI·CV²를 계산합니다. 이 과정은 이후 데이터로 과거 모델 선택에 영향을 주지 않도록 합니다.
+
+공개 `data/public/commax_evaluation.json`에는 원본 파일 SHA-256 fingerprint, 공개 CSV fingerprint, 생성 시각, Git revision, 평가 코드 fingerprint와 dirty 상태, 20개 품목 manifest, SKU×fold×model 지표를 저장합니다. 원본 파일이나 원본의 추가 236개 열은 공개하지 않습니다.

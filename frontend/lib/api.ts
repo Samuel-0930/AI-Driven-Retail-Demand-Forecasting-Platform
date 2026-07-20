@@ -27,7 +27,9 @@ export interface PredictionResponse {
 export interface MetricSummary {
     mae: number;
     wape: number;
-    mase: number;
+    mase: number | null;
+    mase_valid_rows?: number;
+    mase_excluded_rows?: number;
 }
 
 export interface BacktestFold {
@@ -52,6 +54,7 @@ export interface BacktestResponse {
 }
 
 export interface CommaxEvaluationResponse {
+    schema_version: number;
     dataset_type: string;
     scope: string;
     period: string;
@@ -59,6 +62,7 @@ export interface CommaxEvaluationResponse {
     items: number;
     horizon_months: number;
     folds: number;
+    selection_cutoff: string;
     models: Record<string, MetricSummary>;
     pattern_results: Array<{
         pattern: string;

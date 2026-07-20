@@ -3,9 +3,12 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from prophet import Prophet
 
-from ...evaluate_commax import SEASONAL_PERIOD, best_sba_forecast, best_tsb_forecast, seasonal_sba_forecast
+from ...evaluate_commax import (
+    SEASONAL_PERIOD,
+    classify_demand_pattern,
+    forecast_model,
+)
 
 
 class CommaxDataNotFoundError(Exception):
@@ -25,8 +28,12 @@ class CommaxForecastService:
     def _data(self) -> pd.DataFrame:
         if not self.data_path.exists():
             raise CommaxDataNotFoundError
-        df = pd.read_csv(self.data_path, usecols=["품목코드", "품목명", "Pattern", "period", "value"])
+        df = pd.read_csv(self.data_path, usecols=["품목코드", "품목명", "period", "value"])
         df["period"] = pd.to_datetime(df["period"])
+        patterns = df.groupby("품목코드")["value"].apply(
+            lambda values: classify_demand_pattern(values.to_numpy())
+        )
+        df["Pattern"] = df["품목코드"].map(patterns)
         return df
 
     def list_items(self) -> list[dict]:
@@ -41,23 +48,17 @@ class CommaxForecastService:
         if not self.evaluation_path.exists():
             raise CommaxDataNotFoundError
         evaluation = json.loads(self.evaluation_path.read_text(encoding="utf-8"))
-        result = next(result for result in evaluation["pattern_results"] if result["pattern"] == pattern)
+        result = next(
+            (result for result in evaluation["pattern_results"] if result["pattern"] == pattern),
+            None,
+        )
+        if result is None:
+            champion = min(evaluation["models"], key=lambda name: evaluation["models"][name]["wape"])
+            return champion, {"models": evaluation["models"]}
         return result["champion"], result
 
     def _predict(self, item: pd.DataFrame, horizon_months: int, champion: str, future_dates: pd.Series):
-        values = item["value"].to_numpy()
-        if champion == "croston_sba":
-            return best_sba_forecast(values, horizon_months)
-        if champion == "seasonal_croston_sba":
-            return seasonal_sba_forecast(item, future_dates)
-        if champion == "tsb":
-            return best_tsb_forecast(values, horizon_months)
-        if champion == "seasonal_naive":
-            return pd.Series(values[-SEASONAL_PERIOD:]).repeat((horizon_months + SEASONAL_PERIOD - 1) // SEASONAL_PERIOD).to_numpy()[:horizon_months]
-        model = Prophet(yearly_seasonality=True, weekly_seasonality=False, daily_seasonality=False)
-        train = item.rename(columns={"period": "ds", "value": "y"})[["ds", "y"]]
-        model.fit(train)
-        return model.predict(model.make_future_dataframe(periods=horizon_months)).tail(horizon_months)["yhat"].to_numpy()
+        return forecast_model(champion, item, future_dates)
 
     def _historical_absolute_errors(self, item: pd.DataFrame, horizon_months: int, champion: str) -> list[float]:
         """Build an item-level error distribution without looking at the final holdout."""

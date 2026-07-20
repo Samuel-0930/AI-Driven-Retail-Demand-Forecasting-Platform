@@ -33,6 +33,7 @@ const modelLabels: Record<string, string> = {
 const patternLabels: Record<string, string> = {
   Erratic: "변동형",
   Intermittent: "간헐형",
+  Lumpy: "복합 간헐형",
   Smooth: "안정형",
 };
 
@@ -86,7 +87,7 @@ export default function Dashboard() {
   const selectedItem = items.find((item) => item.item_code === itemCode);
   const groupedItems = useMemo(
     () =>
-      ["Erratic", "Intermittent", "Smooth"].map((pattern) => ({
+      ["Erratic", "Intermittent", "Lumpy", "Smooth"].map((pattern) => ({
         pattern,
         items: items.filter((item) => item.pattern === pattern),
       })),
@@ -269,7 +270,7 @@ export default function Dashboard() {
                           {metrics.wape.toFixed(2)}%
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums text-slate-600">{formatNumber(metrics.mae)}</td>
-                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{metrics.mase.toFixed(3)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{metrics.mase?.toFixed(3) ?? "계산 불가"}</td>
                       </tr>
                     ))}
                   </tbody>

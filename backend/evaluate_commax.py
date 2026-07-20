@@ -1,6 +1,13 @@
-"""Pattern-aware benchmark for the top-volume Commax monthly shipment items."""
+"""Leakage-safe benchmark for top-volume monthly COMMAX shipment items."""
 
+from __future__ import annotations
+
+import argparse
+import hashlib
 import json
+import subprocess
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -12,17 +19,66 @@ HORIZON_MONTHS = 6
 FOLDS = 3
 SEASONAL_PERIOD = 12
 TOP_ITEMS = 20
+MONTHLY_FREQ = "MS"
 SBA_ALPHAS = (0.05, 0.1, 0.2, 0.3)
 TSB_ALPHAS = (0.05, 0.1, 0.2, 0.3)
+MODEL_NAMES = (
+    "seasonal_naive",
+    "croston_sba",
+    "seasonal_croston_sba",
+    "tsb",
+    "prophet",
+)
 
 
-def metrics(actual: np.ndarray, predicted: np.ndarray, train: np.ndarray) -> dict[str, float]:
+@dataclass(frozen=True)
+class PatternStats:
+    label: str
+    adi: float | None
+    cv2: float | None
+    periods: int
+    nonzero_periods: int
+
+
+def demand_pattern_stats(values: np.ndarray) -> PatternStats:
+    """Classify demand using only the values available at one forecast origin."""
+    values = np.asarray(values, dtype=float)
+    positive = values[values > 0]
+    if len(positive) == 0:
+        return PatternStats("AllZero", None, None, len(values), 0)
+
+    adi = len(values) / len(positive)
+    if len(positive) < 2 or np.isclose(positive.mean(), 0):
+        return PatternStats("InsufficientHistory", adi, None, len(values), len(positive))
+
+    cv2 = float((positive.std(ddof=1) / positive.mean()) ** 2)
+    if adi < 1.32 and cv2 < 0.49:
+        label = "Smooth"
+    elif adi < 1.32:
+        label = "Erratic"
+    elif cv2 < 0.49:
+        label = "Intermittent"
+    else:
+        label = "Lumpy"
+    return PatternStats(label, round(float(adi), 4), round(cv2, 4), len(values), len(positive))
+
+
+def classify_demand_pattern(values: np.ndarray) -> str:
+    return demand_pattern_stats(values).label
+
+
+def metrics(actual: np.ndarray, predicted: np.ndarray, train: np.ndarray) -> dict[str, float | None]:
+    """Return row-level metrics without treating an undefined MASE as zero."""
+    actual = np.asarray(actual, dtype=float)
+    predicted = np.asarray(predicted, dtype=float)
+    train = np.asarray(train, dtype=float)
     errors = np.abs(actual - predicted)
     mae = float(errors.mean())
     wape = float(errors.sum() / np.abs(actual).sum() * 100) if np.abs(actual).sum() else 0.0
-    scale = np.abs(train[SEASONAL_PERIOD:] - train[:-SEASONAL_PERIOD]).mean()
-    mase = float(mae / scale) if scale else 0.0
-    return {"mae": round(mae, 2), "wape": round(wape, 2), "mase": round(mase, 3)}
+    seasonal_differences = np.abs(train[SEASONAL_PERIOD:] - train[:-SEASONAL_PERIOD])
+    scale = float(seasonal_differences.mean()) if len(seasonal_differences) else 0.0
+    mase = float(mae / scale) if scale > 0 else None
+    return {"mae": round(mae, 2), "wape": round(wape, 2), "mase": round(mase, 3) if mase is not None else None}
 
 
 def sba_forecast(train: np.ndarray, horizon: int, alpha: float) -> np.ndarray:
@@ -89,64 +145,205 @@ def seasonal_sba_forecast(train: pd.DataFrame, future_dates: pd.Series) -> np.nd
     return base * multiplier
 
 
-def aggregate(model_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]]) -> dict[str, float]:
+def prophet_forecast(train: pd.DataFrame, horizon: int) -> np.ndarray:
+    model = Prophet(yearly_seasonality=True, weekly_seasonality=False, daily_seasonality=False)
+    prophet_train = train.rename(columns={"period": "ds", "value": "y"})[["ds", "y"]]
+    model.fit(prophet_train)
+    future = model.make_future_dataframe(periods=horizon, freq=MONTHLY_FREQ)
+    return model.predict(future).tail(horizon)["yhat"].to_numpy()
+
+
+def forecast_model(model_name: str, train: pd.DataFrame, future_dates: pd.Series) -> np.ndarray:
+    """Produce a monthly forecast through the same implementation used by evaluation and API."""
+    horizon = len(future_dates)
+    values = train["value"].to_numpy()
+    if model_name == "croston_sba":
+        return best_sba_forecast(values, horizon)
+    if model_name == "seasonal_croston_sba":
+        return seasonal_sba_forecast(train, future_dates)
+    if model_name == "tsb":
+        return best_tsb_forecast(values, horizon)
+    if model_name == "seasonal_naive":
+        return np.resize(values[-SEASONAL_PERIOD:], horizon)
+    if model_name == "prophet":
+        return prophet_forecast(train, horizon)
+    raise ValueError(f"Unknown model: {model_name}")
+
+
+def aggregate(model_rows: list[tuple[np.ndarray, np.ndarray, np.ndarray]]) -> dict[str, float | int | None]:
+    """Aggregate MAE/WAPE globally and MASE as a macro average over valid SKU-fold rows."""
     actual = np.concatenate([row[0] for row in model_rows])
     prediction = np.concatenate([row[1] for row in model_rows])
-    train = np.concatenate([row[2] for row in model_rows])
-    return metrics(actual, prediction, train)
+    errors = np.abs(actual - prediction)
+    row_metrics = [metrics(*row) for row in model_rows]
+    valid_mase = [result["mase"] for result in row_metrics if result["mase"] is not None]
+    return {
+        "mae": round(float(errors.mean()), 2),
+        "wape": round(float(errors.sum() / np.abs(actual).sum() * 100), 2) if np.abs(actual).sum() else 0.0,
+        "mase": round(float(np.mean(valid_mase)), 3) if valid_mase else None,
+        "mase_valid_rows": len(valid_mase),
+        "mase_excluded_rows": len(model_rows) - len(valid_mase),
+    }
 
 
-def evaluate_commax(data_path: str | Path) -> dict:
-    df = pd.read_csv(data_path, usecols=["품목코드", "품목명", "Pattern", "period", "value"])
+def _evaluation_start(df: pd.DataFrame, required_periods: int) -> pd.Timestamp:
+    periods = df["period"].drop_duplicates().sort_values().to_list()
+    if len(periods) <= required_periods:
+        raise ValueError("The dataset does not contain enough monthly periods for the requested folds.")
+    return pd.Timestamp(periods[-required_periods])
+
+
+def _top_item_codes(df: pd.DataFrame, evaluation_start: pd.Timestamp, top_items: int) -> list[str]:
+    training_only = df[df["period"] < evaluation_start]
+    return training_only.groupby("품목코드")["value"].sum().nlargest(top_items).index.to_list()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _code_revision(root: Path) -> str | None:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _working_tree_is_dirty(root: Path) -> bool | None:
+    try:
+        return subprocess.run(
+            ["git", "diff", "--quiet", "--", "backend/evaluate_commax.py"],
+            cwd=root,
+            check=False,
+        ).returncode != 0
+    except OSError:
+        return None
+
+
+def evaluate_commax(
+    data_path: str | Path,
+    *,
+    horizon_months: int = HORIZON_MONTHS,
+    folds: int = FOLDS,
+    top_items: int = TOP_ITEMS,
+) -> dict:
+    data_path = Path(data_path)
+    df = pd.read_csv(data_path, usecols=["품목코드", "품목명", "period", "value"])
     df["period"] = pd.to_datetime(df["period"])
-    top_codes = df.groupby("품목코드")["value"].sum().nlargest(TOP_ITEMS).index
+    evaluation_start = _evaluation_start(df, folds * horizon_months)
+    top_codes = _top_item_codes(df, evaluation_start, top_items)
     by_pattern: dict[str, dict[str, list[tuple[np.ndarray, np.ndarray, np.ndarray]]]] = {}
+    pattern_codes: dict[str, set[str]] = {}
+    all_models = {name: [] for name in MODEL_NAMES}
+    fold_metrics: list[dict] = []
+    skipped_pattern_rows = 0
+    item_manifest = []
 
     for code in top_codes:
         item = df[df["품목코드"] == code].sort_values("period").reset_index(drop=True)
-        pattern = item["Pattern"].iloc[0]
-        by_pattern.setdefault(pattern, {"seasonal_naive": [], "croston_sba": [], "seasonal_croston_sba": [], "tsb": [], "prophet": []})
-        for origin in range(len(item) - FOLDS * HORIZON_MONTHS, len(item), HORIZON_MONTHS):
-            train, test = item.iloc[:origin], item.iloc[origin:origin + HORIZON_MONTHS]
+        item_manifest.append(
+            {
+                "item_code": code,
+                "item_name": item["품목명"].iloc[0],
+                "serving_pattern": classify_demand_pattern(item["value"].to_numpy()),
+            }
+        )
+        for fold, origin in enumerate(
+            range(len(item) - folds * horizon_months, len(item), horizon_months),
+            start=1,
+        ):
+            train, test = item.iloc[:origin].copy(), item.iloc[origin:origin + horizon_months].copy()
             train_values, actual = train["value"].to_numpy(), test["value"].to_numpy()
-            model = Prophet(yearly_seasonality=True, weekly_seasonality=False, daily_seasonality=False)
-            model.fit(train.rename(columns={"period": "ds", "value": "y"})[["ds", "y"]])
-            prophet = model.predict(model.make_future_dataframe(periods=len(test))).tail(len(test))["yhat"].to_numpy()
-            seasonal_naive = np.resize(train_values[-SEASONAL_PERIOD:], len(test))
-            croston_sba = best_sba_forecast(train_values, len(test))
-            seasonal_croston_sba = seasonal_sba_forecast(train, test["period"])
-            tsb = best_tsb_forecast(train_values, len(test))
-            for name, prediction in (("seasonal_naive", seasonal_naive), ("croston_sba", croston_sba), ("seasonal_croston_sba", seasonal_croston_sba), ("tsb", tsb), ("prophet", prophet)):
-                by_pattern[pattern][name].append((actual, prediction, train_values))
+            pattern = classify_demand_pattern(train_values)
+            if pattern in {"AllZero", "InsufficientHistory"}:
+                skipped_pattern_rows += 1
+                continue
+            by_pattern.setdefault(pattern, {name: [] for name in MODEL_NAMES})
+            pattern_codes.setdefault(pattern, set()).add(code)
+            row_models = {}
+            for name in MODEL_NAMES:
+                prediction = forecast_model(name, train, test["period"])
+                row = (actual, prediction, train_values)
+                by_pattern[pattern][name].append(row)
+                all_models[name].append(row)
+                row_models[name] = metrics(*row)
+            fold_metrics.append(
+                {
+                    "item_code": code,
+                    "fold": fold,
+                    "train_start": train["period"].iloc[0].date().isoformat(),
+                    "train_end": train["period"].iloc[-1].date().isoformat(),
+                    "test_start": test["period"].iloc[0].date().isoformat(),
+                    "test_end": test["period"].iloc[-1].date().isoformat(),
+                    "pattern_at_origin": pattern,
+                    "models": row_models,
+                }
+            )
 
     pattern_results = []
-    all_models = {"seasonal_naive": [], "croston_sba": [], "seasonal_croston_sba": [], "tsb": [], "prophet": []}
     for pattern, model_rows in sorted(by_pattern.items()):
         model_metrics = {name: aggregate(rows) for name, rows in model_rows.items()}
         champion = min(model_metrics, key=lambda name: model_metrics[name]["wape"])
-        pattern_results.append({"pattern": pattern, "items": len({code for code in top_codes if df[df['품목코드'] == code]['Pattern'].iloc[0] == pattern}), "models": model_metrics, "champion": champion})
-        for name, rows in model_rows.items():
-            all_models[name].extend(rows)
+        pattern_results.append(
+            {
+                "pattern": pattern,
+                "items": len(pattern_codes[pattern]),
+                "evaluation_rows": len(next(iter(model_rows.values()))),
+                "models": model_metrics,
+                "champion": champion,
+            }
+        )
 
     model_metrics = {name: aggregate(rows) for name, rows in all_models.items()}
+    global_champion = min(model_metrics, key=lambda name: model_metrics[name]["wape"])
+    champion_manifest = {result["pattern"]: result["champion"] for result in pattern_results}
+    champion_manifest["global_fallback"] = global_champion
     return {
+        "schema_version": 2,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "dataset_fingerprint": _file_sha256(data_path),
+        "code_revision": _code_revision(Path(__file__).resolve().parents[1]),
+        "evaluation_code_fingerprint": _file_sha256(Path(__file__)),
+        "evaluation_code_dirty": _working_tree_is_dirty(Path(__file__).resolve().parents[1]),
         "dataset_type": "commax_monthly_shipments",
-        "scope": "Top 20 items by cumulative shipments",
+        "scope": "Top 20 items by cumulative shipments before the first evaluation holdout",
+        "selection_cutoff": evaluation_start.date().isoformat(),
         "period": f"{df['period'].min().date()} to {df['period'].max().date()}",
-        "evaluation_method": "Three rolling 6-month origins. Prophet has no external variables; seasonal-naive repeats prior-year month; Croston/SBA and TSB tune parameters using training history only.",
-        "items": len(top_codes), "horizon_months": HORIZON_MONTHS, "folds": FOLDS,
+        "evaluation_method": "Three rolling 6-month origins. Demand patterns are recalculated from each fold's training history; Prophet uses month-start future periods.",
+        "items": len(top_codes),
+        "item_codes": top_codes,
+        "item_manifest": item_manifest,
+        "champion_manifest": champion_manifest,
+        "horizon_months": horizon_months,
+        "folds": folds,
         "models": model_metrics,
         "pattern_results": pattern_results,
+        "fold_metrics": fold_metrics,
+        "skipped_pattern_rows": skipped_pattern_rows,
     }
 
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
-    result = evaluate_commax(root / "data/raw/Final_KR_modeling_long_with_external_data.csv")
-    output = root / "data/processed/commax_evaluation.json"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Saved Commax benchmark to {output}")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data-path", type=Path, default=root / "data/raw/Final_KR_modeling_long_with_external_data.csv")
+    parser.add_argument("--output", type=Path, default=root / "data/processed/commax_evaluation.json")
+    args = parser.parse_args()
+
+    result = evaluate_commax(args.data_path)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Saved Commax benchmark to {args.output}")
     for result_by_pattern in result["pattern_results"]:
         print(result_by_pattern["pattern"], result_by_pattern["champion"], result_by_pattern["models"])
 

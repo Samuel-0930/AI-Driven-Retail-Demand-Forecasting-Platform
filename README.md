@@ -14,11 +14,11 @@
 
 간헐적이거나 변동이 큰 수요는 하나의 복잡한 모델을 모든 품목에 적용한다고 잘 풀리지 않습니다. 이 프로젝트는 “가장 복잡한 모델은 무엇인가?” 대신 **“각 수요 패턴에서 실제로 더 정확한 모델은 무엇인가?”**를 시간 순서를 지킨 검증으로 답합니다.
 
-실제 월별 출하 데이터를 Erratic·Intermittent·Smooth 패턴으로 나누고, baseline부터 Prophet까지 동일한 rolling-origin 검증에서 비교했습니다. 품목 선택 화면에서는 점수만 보여주지 않고 **실제 출하량 vs 당시 예측, 오차, 예측 구간**을 함께 보여 줍니다.
+실제 월별 출하 데이터를 baseline부터 Prophet까지 동일한 rolling-origin 검증에서 비교했습니다. 수요 패턴은 전체 이력에 붙어 있는 정적 라벨을 사용하지 않고, **각 검증 회차의 학습 데이터만으로** ADI·CV² 기준으로 다시 계산합니다. 품목 선택 화면에서는 점수만 보여주지 않고 **실제 출하량 vs 당시 예측, 오차, 예측 구간**을 함께 보여 줍니다.
 
 | 데이터 범위 | 검증 설계 | 평가 대상 | 공개 산출물 |
 | --- | --- | --- | --- |
-| 20,096개 월별 관측치 · 157개 품목 | 3회 rolling origin · 회차별 6개월 | 누적 출하량 상위 20개 품목 | champion 모델 · holdout 비교 · 예측 구간 |
+| 20,096개 월별 관측치 · 157개 품목 | 3회 rolling origin · 회차별 6개월 | 첫 holdout 이전 누적 출하량 상위 20개 품목 | schema-versioned benchmark · holdout 비교 · 예측 구간 |
 
 ## 핵심 결과
 
@@ -32,8 +32,8 @@
 | 전체 비교 | 20 | Croston/SBA | **42.53%** |
 
 - Croston/SBA는 전체 비교에서 seasonal naive보다 **15.82%p 낮은 WAPE**를 기록했습니다.
-- Prophet은 이 데이터와 검증 설계에서 champion으로 선택되지 않았습니다. 복잡도가 아니라 검증 결과가 모델 선택을 이끈 사례입니다.
-- 대시보드는 WAPE뿐 아니라 MASE·MAE, 월별 절대오차와 예측 구간 coverage도 제공합니다.
+- Prophet은 월초(`MS`) 주기의 미래 시점으로 평가했으며 전체 WAPE는 73.85%였습니다. 이 데이터와 검증 설계에서 champion으로 선택되지 않았습니다.
+- 대시보드는 WAPE뿐 아니라 MASE·MAE, 월별 절대오차와 예측 구간 coverage도 제공합니다. MASE는 SKU·fold별로 계산한 뒤 유효한 값의 평균으로 집계합니다.
 
 ## 데모에서 확인할 수 있는 것
 
@@ -59,7 +59,7 @@
 
 ```mermaid
 flowchart LR
-    A["월별 출하 데이터"] --> B["수요 패턴 분류"]
+    A["월별 출하 데이터"] --> B["fold별 학습 이력으로 패턴 분류"]
     B --> C["5개 모델 benchmark"]
     C --> D["3 × 6개월 rolling validation"]
     D --> E["패턴별 champion 선택"]
@@ -69,10 +69,10 @@ flowchart LR
 
 | 단계 | 구현 |
 | --- | --- |
-| 분류 | 원본 분석 데이터의 Pattern 라벨로 Erratic·Intermittent·Smooth 품목군을 분리 |
+| 분류 | 각 fold의 학습 이력에서 ADI·CV²를 계산해 Smooth·Erratic·Intermittent·Lumpy를 분류 |
 | 후보 모델 | Seasonal naive, Croston/SBA, Seasonal Croston/SBA, TSB, Prophet |
 | 검증 | 미래 6개월을 순차적으로 숨기는 3회 rolling-origin 평가 |
-| 평가 | WAPE, MASE, MAE와 품목별 holdout 오차 |
+| 평가 | WAPE, MAE, SKU·fold별 MASE와 품목별 holdout 오차 |
 | 제품화 | FastAPI 분석 API, Next.js 대시보드, Vercel·Render 배포 |
 
 ## 시스템 구성
@@ -143,6 +143,7 @@ PYTHONPATH=. venv/bin/python backend/prepare_public_demo_data.py
 
 - 평가는 상위 20개 품목에 한정되며, 전체 157개 품목의 운영 성능으로 일반화할 수 없습니다.
 - 패턴별 WAPE는 품목군 수준의 결과입니다. 개별 품목의 성능은 대시보드 holdout 화면에서 확인해야 합니다.
+- `data/public/commax_evaluation.json`에는 schema version, 원본·공개 데이터 fingerprint, code revision, item/champion manifest, SKU×fold×model metric이 기록됩니다. 원본 CSV 자체는 포함하지 않습니다.
 - 실제 재고·입고 예정·공급 리드 타임 데이터가 없으므로 재고 계획은 **입력값 기반 시뮬레이터**입니다. 실제 재고 운영 성과나 품절 확률을 주장하지 않습니다.
 - 실제 운영 전에는 품절, 판촉 계획, 리드 타임, 예측 구간 coverage, 과소·과대 예측 비용을 함께 검증해야 합니다.
 

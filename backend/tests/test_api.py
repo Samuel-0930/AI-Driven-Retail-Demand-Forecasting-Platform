@@ -21,7 +21,12 @@ def test_public_commax_dashboard_data_is_available():
     items = client.get("/api/v1/commax/items")
 
     assert evaluation.status_code == 200
-    assert evaluation.json()["items"] == 20
+    artifact = evaluation.json()
+    assert artifact["schema_version"] == 2
+    assert artifact["items"] == 20
+    assert len(artifact["item_manifest"]) == 20
+    assert len(artifact["fold_metrics"]) == 60
+    assert artifact["public_data_fingerprint"]
     assert items.status_code == 200
     assert len(items.json()) == 20
 
@@ -68,6 +73,8 @@ def test_predict_rejects_horizon_longer_than_90_days():
         "start_date": "2025-01-01",
         "end_date": "2025-04-02",
     })
+
+    assert response.status_code == 422
 
 def test_predict_hides_internal_errors(monkeypatch):
     def raise_internal_error(_):
