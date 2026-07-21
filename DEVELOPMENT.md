@@ -27,6 +27,12 @@ npm run build
 npm run dev
 ```
 
+대시보드의 실제 브라우저 렌더링과 API 연동은 다음 명령으로 확인합니다. `npm ci`를 먼저 실행해야 하며, 로컬 가상환경을 쓰는 경우 `PYTHON_BIN`에 그 Python 경로를 넣습니다.
+
+```bash
+PYTHON_BIN=venv/bin/python bash scripts/dashboard_smoke.sh
+```
+
 The development server proxies `/api` and `/health` to `http://127.0.0.1:8000`. Set `BACKEND_URL` before `npm run dev` to use another backend.
 
 ## Full stack
