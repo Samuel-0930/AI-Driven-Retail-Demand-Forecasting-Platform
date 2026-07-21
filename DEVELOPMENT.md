@@ -12,6 +12,8 @@
 uv venv venv --python 3.11
 uv pip install --python venv/bin/python -r backend/requirements.txt
 PYTHONPATH=. venv/bin/pytest -q backend/tests
+PYTHONPATH=. venv/bin/python backend/bootstrap_demo.py
+PYTHONPATH=. venv/bin/python backend/verify_demo.py
 PYTHONPATH=. venv/bin/uvicorn backend.main:app --reload
 ```
 
@@ -35,4 +37,4 @@ docker compose up --build
 docker compose exec backend python backend/bootstrap_demo.py
 ```
 
-The repository does not contain trained model artifacts. `bootstrap_demo.py` trains the default store 1 / product 1 synthetic demo model, so the prediction form works immediately after the command completes.
+The repository does not contain trained model artifacts. `bootstrap_demo.py` trains the default store 1 / product 1 synthetic demo model, and `verify_demo.py` asserts that the bootstrapped model serves a seven-day prediction plus a three-fold evaluation artifact.

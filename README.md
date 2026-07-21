@@ -145,6 +145,21 @@ PYTHONPATH=. venv/bin/python backend/evaluate_commax.py
 PYTHONPATH=. venv/bin/python backend/prepare_public_demo_data.py
 ```
 
+### 원본 데이터 없이 예측 API까지 빠르게 확인하기
+
+COMMAX 원본 데이터 없이도, 결정론적 합성 데이터로 학습·검증·예측 API를 재현할 수 있습니다. 아래 명령은 기본 품목(`store_id=1`, `product_id=1`) 모델과 3회 rolling evaluation을 만들고, 마지막 명령은 7일 예측과 evaluation artifact를 함께 확인합니다.
+
+```bash
+PYTHONPATH=. venv/bin/python backend/bootstrap_demo.py
+PYTHONPATH=. venv/bin/python backend/verify_demo.py
+```
+
+그 뒤 API를 실행하면 됩니다.
+
+```bash
+PYTHONPATH=. venv/bin/uvicorn backend.main:app --reload
+```
+
 ## 데이터 계보와 해석 한계
 
 이 저장소는 실제 출하 데이터 분석과 합성 데이터 기반 엔지니어링 데모를 의도적으로 분리합니다. 두 결과를 하나의 end-to-end 운영 모델 성과처럼 해석하지 않습니다.

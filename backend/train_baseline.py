@@ -92,7 +92,13 @@ def train_baseline(data_path, store_id, product_id):
         mlflow.log_metric("rmse", rmse)
         
         # Log Model
-        mlflow.prophet.log_model(model, "model")
+        input_example = train_df[["ds", "is_promo"]].head(2).copy()
+        input_example["is_promo"] = input_example["is_promo"].astype(float)
+        mlflow.prophet.log_model(
+            model,
+            "model",
+            input_example=input_example,
+        )
         
         return mae, rmse
 

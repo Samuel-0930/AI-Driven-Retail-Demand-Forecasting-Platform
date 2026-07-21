@@ -52,7 +52,7 @@ class PredictionService:
         loaded_model = self._load_model(run_id)
         dates = pd.date_range(start=request.start_date, end=request.end_date)
         future = pd.DataFrame({'ds': dates})
-        future['is_promo'] = 1 if request.is_promo else 0
+        future['is_promo'] = 1.0 if request.is_promo else 0.0
         forecast = loaded_model.predict(future)
 
         predictions = []
